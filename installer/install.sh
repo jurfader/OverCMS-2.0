@@ -27,6 +27,15 @@
 
 set -euo pipefail
 
+# Usuń zmienne środowiskowe które mogłyby wyciec z procesu rodzica
+# (np. OVERPANEL ma własne DATABASE_URL do PostgreSQL/Prismy, a oscarotero/env
+# z LOCAL_FIRST woli env() nad .env → Bedrock próbowałby parsować ten URL).
+unset DATABASE_URL
+unset DB_NAME DB_USER DB_PASSWORD DB_HOST DB_PREFIX
+unset WP_HOME WP_SITEURL WP_ENV
+unset AUTH_KEY SECURE_AUTH_KEY LOGGED_IN_KEY NONCE_KEY
+unset AUTH_SALT SECURE_AUTH_SALT LOGGED_IN_SALT NONCE_SALT
+
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
 readonly YELLOW='\033[0;33m'
