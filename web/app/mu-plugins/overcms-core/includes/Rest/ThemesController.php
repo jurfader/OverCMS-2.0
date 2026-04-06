@@ -91,7 +91,7 @@ final class ThemesController
             require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
             require_once ABSPATH . 'wp-admin/includes/class-theme-upgrader.php';
             require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader-skin.php';
-            require_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
+            require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
 
             // Wymuś direct filesystem (potrzebujemy zapisu do wp-content/themes)
             add_filter('filesystem_method', static fn () => 'direct');
@@ -102,18 +102,24 @@ final class ThemesController
                 ], 500);
             }
 
-            $skin     = new \Automatic_Upgrader_Skin();
+            // WP_Ajax_Upgrader_Skin tłumi prompty kredencjali I wystawia get_errors()
+            // (Automatic_Upgrader_Skin nie ma tej metody w starszych wersjach WP).
+            $skin     = new \WP_Ajax_Upgrader_Skin();
             $upgrader = new \Theme_Upgrader($skin);
-            // overwrite='replace' żeby działało też przy reuploadzie tej samej wersji
             $result   = $upgrader->install($file['tmp_name'], ['overwrite_package' => true]);
+
+            // Sprawdź błędy w upgrader (robione tylko jeśli get_errors istnieje)
+            if (method_exists($skin, 'get_errors')) {
+                $errors = $skin->get_errors();
+                if (is_wp_error($errors) && $errors->has_errors()) {
+                    return new \WP_REST_Response([
+                        'error' => 'skin: ' . $errors->get_error_message(),
+                    ], 500);
+                }
+            }
 
             if (is_wp_error($result)) {
                 return new \WP_REST_Response(['error' => 'install: ' . $result->get_error_message()], 500);
-            }
-            if ($skin->get_errors()->has_errors()) {
-                return new \WP_REST_Response([
-                    'error' => 'skin: ' . ($skin->get_error_messages()[0] ?? 'unknown'),
-                ], 500);
             }
             if ($result === false) {
                 return new \WP_REST_Response([

@@ -170,7 +170,7 @@ final class MarketplaceController
             require_once ABSPATH . 'wp-admin/includes/class-plugin-upgrader.php';
             require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader-skin.php';
             require_once ABSPATH . 'wp-admin/includes/class-plugin-upgrader-skin.php';
-            require_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
+            require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
 
             // Sprawdź czy nie jest już zainstalowany
             $installed = self::installedSlugs();
@@ -209,20 +209,22 @@ final class MarketplaceController
                 ], 500);
             }
 
-            // Automatic skin tłumi prompty kredencjali; ajax skin też działa.
-            $skin     = new \Automatic_Upgrader_Skin();
+            // WP_Ajax_Upgrader_Skin tłumi prompty kredencjali I wystawia get_errors()
+            // jako WP_Error (Automatic_Upgrader_Skin nie ma tej metody w starszych WP).
+            $skin     = new \WP_Ajax_Upgrader_Skin();
             $upgrader = new \Plugin_Upgrader($skin);
             $result   = $upgrader->install($api->download_link);
 
+            if (method_exists($skin, 'get_errors')) {
+                $errors = $skin->get_errors();
+                if (is_wp_error($errors) && $errors->has_errors()) {
+                    return new \WP_REST_Response([
+                        'error' => 'skin: ' . $errors->get_error_message(),
+                    ], 500);
+                }
+            }
             if (is_wp_error($result)) {
                 return new \WP_REST_Response(['error' => 'install: ' . $result->get_error_message()], 500);
-            }
-            if ($skin->get_errors()->has_errors()) {
-                $messages = $skin->get_error_messages();
-                return new \WP_REST_Response([
-                    'error' => 'skin: ' . ($messages[0] ?? 'unknown skin error'),
-                    'all'   => $messages,
-                ], 500);
             }
             if ($result === false) {
                 return new \WP_REST_Response([
