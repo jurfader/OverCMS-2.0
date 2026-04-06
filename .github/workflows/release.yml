@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, gd, zip, curl, mysql
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: overcms-panel/package-lock.json
+
+      - name: Composer install (no-dev)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --no-progress
+
+      - name: Build React panel
+        working-directory: overcms-panel
+        run: |
+          npm ci
+          npm run build
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=dev-$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release archive
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          STAGING="overcms-${VERSION}"
+          mkdir -p "$STAGING"
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='overcms-panel/node_modules' \
+            --exclude='overcms-panel/src' \
+            --exclude='overcms-panel/index.html' \
+            --exclude='overcms-panel/vite.config.ts' \
+            --exclude='overcms-panel/tsconfig*.json' \
+            --exclude='overcms-panel/package*.json' \
+            --exclude='tests' \
+            --exclude='phpunit.xml.dist' \
+            --exclude='pint.json' \
+            --exclude='.env' \
+            --exclude='web/app/uploads' \
+            --exclude="$STAGING" \
+            ./ "$STAGING/"
+          zip -rq "${STAGING}.zip" "$STAGING"
+          sha256sum "${STAGING}.zip" > "${STAGING}.zip.sha256"
+          ls -lh "${STAGING}.zip"
+
+      - name: Upload release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            overcms-${{ steps.version.outputs.version }}.zip
+            overcms-${{ steps.version.outputs.version }}.zip.sha256
+          generate_release_notes: true
