@@ -21,6 +21,14 @@ define('OVERCMS_PANEL_DIST', __DIR__ . '/panel/dist');
 define('OVERCMS_PANEL_DIST_URL', OVERCMS_URL . '/panel/dist');
 define('OVERCMS_GITHUB_REPO', 'jurfader/OverCMS-2.0');
 
+// FS_METHOD = direct: żeby Plugin_Upgrader / Theme_Upgrader (instalacja
+// pluginów z marketplace, aktualizacje OverCMS Core) zapisywały bezpośrednio
+// do filesystem zamiast prosić o FTP credentials. Wymagane gdy serwer
+// wp-content jest writable przez www-data — co installer już ustawia.
+if (!defined('FS_METHOD')) {
+    define('FS_METHOD', 'direct');
+}
+
 // PSR-4 autoloader for OverCMS\Core\
 spl_autoload_register(static function (string $class): void {
     $prefix = 'OverCMS\\Core\\';

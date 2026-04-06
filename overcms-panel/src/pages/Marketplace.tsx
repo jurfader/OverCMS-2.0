@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, Download, Star, Users, Loader2, CheckCircle2 } from 'lucide-react';
+import { Search, Download, Star, Users, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { MarketplacePlugin, MarketplaceResponse } from '@/lib/types';
 import { PageHeader } from '@/components/layout/Shell';
@@ -33,17 +33,27 @@ export function MarketplacePage() {
           }),
   });
 
+  const [installError, setInstallError] = useState<string | null>(null);
+
   const install = useMutation({
     mutationFn: (slug: string) =>
       api<{ success: boolean; activated?: boolean }>('overcms/v1/marketplace/install', {
         method: 'POST',
         body: { slug, activate: true },
       }),
-    onMutate: (slug) => setInstallingSlug(slug),
+    onMutate: (slug) => {
+      setInstallingSlug(slug);
+      setInstallError(null);
+    },
     onSettled: () => setInstallingSlug(null),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['marketplace'] });
       qc.invalidateQueries({ queryKey: ['modules'] });
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : 'Nieznany błąd instalacji';
+      setInstallError(msg);
+      setTimeout(() => setInstallError(null), 8000);
     },
   });
 
@@ -69,6 +79,13 @@ export function MarketplacePage() {
         title="Marketplace"
         description="Tysiące darmowych pluginów z oficjalnego repozytorium WordPress.org"
       />
+
+      {installError && (
+        <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded-[var(--radius)] bg-[color-mix(in_srgb,var(--color-destructive)_10%,transparent)] text-[var(--color-destructive)] border border-[color-mix(in_srgb,var(--color-destructive)_30%,transparent)]">
+          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <div className="text-xs flex-1 break-words">{installError}</div>
+        </div>
+      )}
 
       {/* Search */}
       <form onSubmit={onSearch} className="mb-4 flex gap-2 max-w-xl">

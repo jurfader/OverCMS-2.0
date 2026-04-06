@@ -161,78 +161,106 @@ final class MarketplaceController
             return new \WP_REST_Response(['error' => 'Invalid slug'], 400);
         }
 
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        require_once ABSPATH . 'wp-admin/includes/misc.php';
-        require_once ABSPATH . 'wp-admin/includes/plugin.php';
-        require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
-        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
-        require_once ABSPATH . 'wp-admin/includes/class-plugin-upgrader.php';
-        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader-skin.php';
-        require_once ABSPATH . 'wp-admin/includes/class-plugin-upgrader-skin.php';
+        try {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/misc.php';
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+            require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
+            require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+            require_once ABSPATH . 'wp-admin/includes/class-plugin-upgrader.php';
+            require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader-skin.php';
+            require_once ABSPATH . 'wp-admin/includes/class-plugin-upgrader-skin.php';
+            require_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
 
-        // Sprawdź czy nie jest już zainstalowany
-        $installed = self::installedSlugs();
-        if (isset($installed[$slug])) {
-            // Już zainstalowany — może tylko aktywować
-            $file = self::pluginFileForSlug($slug);
-            if ($activate && $file && !is_plugin_active($file)) {
-                $result = activate_plugin($file);
-                if (is_wp_error($result)) {
-                    return new \WP_REST_Response(['error' => $result->get_error_message()], 500);
+            // Sprawdź czy nie jest już zainstalowany
+            $installed = self::installedSlugs();
+            if (isset($installed[$slug])) {
+                $file = self::pluginFileForSlug($slug);
+                if ($activate && $file && !is_plugin_active($file)) {
+                    $result = activate_plugin($file);
+                    if (is_wp_error($result)) {
+                        return new \WP_REST_Response(['error' => $result->get_error_message()], 500);
+                    }
+                }
+                return new \WP_REST_Response(['success' => true, 'alreadyInstalled' => true]);
+            }
+
+            // Pobierz informacje o pluginie z wp.org
+            $api = plugins_api('plugin_information', [
+                'slug'   => $slug,
+                'fields' => ['sections' => false],
+            ]);
+            if (is_wp_error($api)) {
+                return new \WP_REST_Response([
+                    'error' => 'plugins_api failed: ' . $api->get_error_message(),
+                ], 502);
+            }
+            if (empty($api->download_link)) {
+                return new \WP_REST_Response(['error' => 'No download link returned by wp.org'], 502);
+            }
+
+            // Wymuś metodę direct (FS_METHOD jest też zdefiniowane w overcms-core.php,
+            // ale dodajemy filtr na wypadek gdyby zostało nadpisane).
+            add_filter('filesystem_method', static fn () => 'direct');
+
+            if (!WP_Filesystem()) {
+                return new \WP_REST_Response([
+                    'error' => 'Cannot initialize WP_Filesystem (check that wp-content is writable by ' . get_current_user() . ')',
+                ], 500);
+            }
+
+            // Automatic skin tłumi prompty kredencjali; ajax skin też działa.
+            $skin     = new \Automatic_Upgrader_Skin();
+            $upgrader = new \Plugin_Upgrader($skin);
+            $result   = $upgrader->install($api->download_link);
+
+            if (is_wp_error($result)) {
+                return new \WP_REST_Response(['error' => 'install: ' . $result->get_error_message()], 500);
+            }
+            if ($skin->get_errors()->has_errors()) {
+                $messages = $skin->get_error_messages();
+                return new \WP_REST_Response([
+                    'error' => 'skin: ' . ($messages[0] ?? 'unknown skin error'),
+                    'all'   => $messages,
+                ], 500);
+            }
+            if ($result === false) {
+                return new \WP_REST_Response([
+                    'error' => 'Plugin_Upgrader::install returned false (likely permission issue on wp-content/plugins)',
+                ], 500);
+            }
+
+            // Aktywuj jeśli żądano
+            if ($activate) {
+                $file = $upgrader->plugin_info();
+                if (!$file) {
+                    // Spróbuj znaleźć po slug
+                    $file = self::pluginFileForSlug($slug);
+                }
+                if ($file) {
+                    $activated = activate_plugin($file);
+                    if (is_wp_error($activated)) {
+                        return new \WP_REST_Response([
+                            'success'   => true,
+                            'installed' => true,
+                            'activated' => false,
+                            'warning'   => $activated->get_error_message(),
+                        ]);
+                    }
                 }
             }
-            return new \WP_REST_Response(['success' => true, 'alreadyInstalled' => true]);
-        }
 
-        // Pobierz informacje o pluginie
-        $api = plugins_api('plugin_information', [
-            'slug'   => $slug,
-            'fields' => ['sections' => false],
-        ]);
-        if (is_wp_error($api)) {
-            return new \WP_REST_Response(['error' => $api->get_error_message()], 502);
+            return new \WP_REST_Response([
+                'success'   => true,
+                'installed' => true,
+                'activated' => $activate,
+            ]);
+        } catch (\Throwable $e) {
+            return new \WP_REST_Response([
+                'error' => 'exception: ' . $e->getMessage(),
+                'file'  => basename($e->getFile()) . ':' . $e->getLine(),
+            ], 500);
         }
-
-        // Inicjalizacja WP_Filesystem
-        if (!WP_Filesystem()) {
-            return new \WP_REST_Response(['error' => 'Cannot initialize WP_Filesystem'], 500);
-        }
-
-        $skin     = new \WP_Ajax_Upgrader_Skin();
-        $upgrader = new \Plugin_Upgrader($skin);
-        $result   = $upgrader->install($api->download_link);
-
-        if (is_wp_error($result)) {
-            return new \WP_REST_Response(['error' => $result->get_error_message()], 500);
-        }
-        if ($skin->get_errors()->has_errors()) {
-            return new \WP_REST_Response(['error' => $skin->get_error_messages()[0] ?? 'Install failed'], 500);
-        }
-        if (!$result) {
-            return new \WP_REST_Response(['error' => 'Plugin_Upgrader::install returned false'], 500);
-        }
-
-        // Aktywuj jeśli żądano
-        if ($activate) {
-            $file = $upgrader->plugin_info();
-            if ($file) {
-                $activated = activate_plugin($file);
-                if (is_wp_error($activated)) {
-                    return new \WP_REST_Response([
-                        'success'   => true,
-                        'installed' => true,
-                        'activated' => false,
-                        'warning'   => $activated->get_error_message(),
-                    ]);
-                }
-            }
-        }
-
-        return new \WP_REST_Response([
-            'success'   => true,
-            'installed' => true,
-            'activated' => $activate,
-        ]);
     }
 
     /**

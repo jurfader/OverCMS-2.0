@@ -35,7 +35,7 @@ final class PanelLoader
         if ($hook !== 'toplevel_page_' . self::SLUG) {
             return;
         }
-        $noisy = [
+        $noisyScripts = [
             'wp-router',
             'wp-core-commands',
             'wp-commands',
@@ -54,9 +54,44 @@ final class PanelLoader
             'wp-style-engine',
             'wp-warning',
         ];
-        foreach ($noisy as $handle) {
+        foreach ($noisyScripts as $handle) {
             wp_dequeue_script($handle);
             wp_deregister_script($handle);
+        }
+
+        // wp-admin color schemes (colors-fresh, colors-modern, ...) wymuszają
+        // ciemny kolor #1d2327 na .wrap h1, .wrap h2 itd. — wygrywa specyficznością
+        // z naszymi Tailwindowymi klasami. Wycinamy je całkowicie + dodajemy
+        // własny reset niżej.
+        $noisyStyles = [
+            'colors',
+            'common',
+            'forms',
+            'admin-menu',
+            'dashboard',
+            'list-tables',
+            'edit',
+            'revisions',
+            'media',
+            'themes',
+            'about',
+            'nav-menus',
+            'wp-pointer',
+            'widgets',
+            'site-icon',
+            'l10n',
+            'install',
+            'wp-block-library',
+            'wp-block-library-theme',
+            'wp-block-editor',
+            'wp-edit-blocks',
+            'wp-edit-post',
+            'wp-edit-site',
+            'wp-format-library',
+            'wp-nux',
+            'wp-components',
+        ];
+        foreach ($noisyStyles as $handle) {
             wp_dequeue_style($handle);
             wp_deregister_style($handle);
         }
@@ -193,6 +228,25 @@ final class PanelLoader
   }
   .overcms-root { min-height: 100vh; }
   .update-nag, .notice, div.error, div.updated { display: none !important; }
+
+  /* Reset wp-admin h1-h6 \"color: #1d2327\" rules \u2014 nasze nagl\u00f3wki dziedzicz\u0105
+     kolor z var(--color-foreground) ustawiany przez React/Tailwind. */
+  #overcms-root,
+  #overcms-root h1, #overcms-root h2, #overcms-root h3,
+  #overcms-root h4, #overcms-root h5, #overcms-root h6,
+  #overcms-root p, #overcms-root span, #overcms-root label, #overcms-root a {
+    color: inherit;
+  }
+  #overcms-root h1, #overcms-root h2, #overcms-root h3,
+  #overcms-root h4, #overcms-root h5, #overcms-root h6 {
+    margin: 0;
+    padding: 0;
+    font-weight: inherit;
+    line-height: inherit;
+  }
+  /* WP-admin .wrap reguly typu \"a:focus { box-shadow: ... }\" \u2014 nasze fokusy
+     s\u0105 obs\u0142ugiwane przez Tailwind/CSS variables. */
+  #overcms-root a:focus, #overcms-root button:focus { box-shadow: none; }
 </style>
 CSS;
     }
