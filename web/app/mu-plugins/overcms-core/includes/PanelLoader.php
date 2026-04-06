@@ -79,6 +79,12 @@ final class PanelLoader
 
     public static function render(): void
     {
+        // Inline script ustawia klasę motywu na <html> przed pierwszym paintem
+        // żeby uniknąć flash of wrong theme. Czyta z localStorage (klucz overcms-theme)
+        // z fallbackiem do opcji WP. Bez tego tło migało dark→light przy odświeżeniu
+        // strony w light mode.
+        $stored = get_option('overcms_panel_theme', 'dark') === 'light' ? 'light' : 'dark';
+        echo '<script>(function(){try{var t=localStorage.getItem("overcms-theme");if(t!=="dark"&&t!=="light"){t=' . json_encode($stored) . ';}var h=document.documentElement;h.classList.remove("dark","light");h.classList.add(t);}catch(e){document.documentElement.classList.add(' . json_encode($stored) . ');}})();</script>';
         echo '<div id="overcms-root" class="overcms-root"></div>';
     }
 
@@ -162,6 +168,10 @@ final class PanelLoader
     /**
      * Ukrywa standardowy nagłówek wp-admin gdy jesteśmy na stronie panelu
      * (panel renderuje własny topbar).
+     *
+     * Tło jest theme-aware: pierwsza wartość to fallback dla bardzo wczesnego
+     * paint przed załadowaniem React/CSS, druga (var) bierze aktualny motyw
+     * z OverCMS design tokens.
      */
     public static function injectFullscreenStyles(): void
     {
@@ -169,15 +179,20 @@ final class PanelLoader
         if (!$screen || $screen->id !== 'toplevel_page_' . self::SLUG) {
             return;
         }
-        echo <<<'CSS'
+        $theme = get_option('overcms_panel_theme', 'dark') === 'light' ? 'light' : 'dark';
+        $bgFallback = $theme === 'light' ? '#ECEEFF' : '#0A0B14';
+        echo <<<CSS
 <style>
   html.wp-toolbar { padding-top: 0 !important; }
   #wpadminbar, #adminmenumain, #adminmenuwrap, #adminmenuback, #wpfooter { display: none !important; }
   #wpcontent, #wpbody, #wpbody-content { margin-left: 0 !important; padding: 0 !important; }
-  #wpwrap { background: #0A0B14; }
+  html.{$theme} #wpwrap, html.{$theme} body.toplevel_page_overcms,
+  #wpwrap, body.toplevel_page_overcms {
+    background: {$bgFallback};
+    background: var(--color-background, {$bgFallback});
+  }
   .overcms-root { min-height: 100vh; }
   .update-nag, .notice, div.error, div.updated { display: none !important; }
-  body.toplevel_page_overcms { background: #0A0B14; }
 </style>
 CSS;
     }

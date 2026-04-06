@@ -111,25 +111,32 @@ final class MarketplaceController
             return new \WP_REST_Response(['error' => $api->get_error_message()], 502);
         }
 
-        // Normalizacja na potrzeby UI
+        // Normalizacja na potrzeby UI.
+        // plugins_api() zwraca pluginy jako stdClass LUB array w zależności od
+        // konfiguracji — WP core też robi `(array) $plugin` przed iteracją w
+        // wp-admin/includes/class-wp-plugin-install-list-table.php. Defensywnie
+        // konwertujemy każdy element żeby działało w obu przypadkach.
         $installed = self::installedSlugs();
         $items = array_map(static function ($p) use ($installed) {
-            $slug = $p->slug ?? '';
+            $p     = is_object($p) ? get_object_vars($p) : (array) $p;
+            $icons = isset($p['icons']) ? (array) $p['icons'] : [];
+            $slug  = (string) ($p['slug'] ?? '');
+
             return [
                 'slug'             => $slug,
-                'name'             => wp_strip_all_tags((string) ($p->name ?? '')),
-                'shortDescription' => wp_strip_all_tags((string) ($p->short_description ?? '')),
-                'author'           => wp_strip_all_tags((string) ($p->author ?? '')),
-                'version'          => $p->version ?? null,
-                'rating'           => isset($p->rating) ? (float) $p->rating : null,
-                'numRatings'       => (int) ($p->num_ratings ?? 0),
-                'activeInstalls'   => (int) ($p->active_installs ?? 0),
-                'icon'             => $p->icons['1x'] ?? $p->icons['default'] ?? null,
-                'iconHigh'         => $p->icons['2x'] ?? null,
-                'lastUpdated'      => $p->last_updated ?? null,
-                'requiresPhp'      => $p->requires_php ?? null,
-                'requiresWp'       => $p->requires ?? null,
-                'testedWp'         => $p->tested ?? null,
+                'name'             => wp_strip_all_tags((string) ($p['name'] ?? '')),
+                'shortDescription' => wp_strip_all_tags((string) ($p['short_description'] ?? '')),
+                'author'           => wp_strip_all_tags((string) ($p['author'] ?? '')),
+                'version'          => $p['version'] ?? null,
+                'rating'           => isset($p['rating']) ? (float) $p['rating'] : null,
+                'numRatings'       => (int) ($p['num_ratings'] ?? 0),
+                'activeInstalls'   => (int) ($p['active_installs'] ?? 0),
+                'icon'             => $icons['1x'] ?? $icons['default'] ?? $icons['svg'] ?? null,
+                'iconHigh'         => $icons['2x'] ?? null,
+                'lastUpdated'      => $p['last_updated'] ?? null,
+                'requiresPhp'      => $p['requires_php'] ?? null,
+                'requiresWp'       => $p['requires'] ?? null,
+                'testedWp'         => $p['tested'] ?? null,
                 'installed'        => isset($installed[$slug]),
                 'active'           => $installed[$slug] ?? false,
             ];
