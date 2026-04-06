@@ -117,13 +117,23 @@ Config::define('DB_CHARSET', 'utf8mb4');
 Config::define('DB_COLLATE', '');
 $table_prefix = env('DB_PREFIX') ?: 'wp_';
 
-if (env('DATABASE_URL')) {
-    $dsn = (object) parse_url(env('DATABASE_URL'));
+// DATABASE_URL parsing — TYLKO mysql:// / mariadb://.
+//
+// Bez tego guarda OverCMS uruchamiany z procesu, który ma w środowisku
+// DATABASE_URL=postgresql://... (np. OVERPANEL używający Prismy/Postgresa)
+// próbowałby sparsować PG DSN i wywalał:
+//   PHP Warning: Undefined property: stdClass::$user
+//   Error establishing a database connection
+$databaseUrl = env('DATABASE_URL');
+if ($databaseUrl && preg_match('#^(mysql|mariadb)://#i', (string) $databaseUrl)) {
+    $dsn = (object) parse_url($databaseUrl);
 
-    Config::define('DB_NAME', substr($dsn->path, 1));
-    Config::define('DB_USER', $dsn->user);
-    Config::define('DB_PASSWORD', isset($dsn->pass) ? $dsn->pass : null);
-    Config::define('DB_HOST', isset($dsn->port) ? "{$dsn->host}:{$dsn->port}" : $dsn->host);
+    if (isset($dsn->path, $dsn->user)) {
+        Config::define('DB_NAME', substr($dsn->path, 1));
+        Config::define('DB_USER', $dsn->user);
+        Config::define('DB_PASSWORD', isset($dsn->pass) ? $dsn->pass : null);
+        Config::define('DB_HOST', isset($dsn->port) ? "{$dsn->host}:{$dsn->port}" : $dsn->host);
+    }
 }
 
 /**
