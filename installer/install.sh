@@ -347,6 +347,13 @@ else
     ensure_dependencies
 fi
 
+# WP-CLI odmawia uruchomienia jako root bez --allow-root.
+# Gdy jesteśmy rootem (typowe dla automatycznych instalatorów typu OVERPANEL),
+# dodaj ten flag do każdego wywołania $WP_CLI.
+if [ "$(id -u)" -eq 0 ]; then
+    WP_CLI="$WP_CLI --allow-root"
+fi
+
 # ---------- Interactive prompts ----------
 if [ "$NON_INTERACTIVE" -eq 0 ]; then
     [ -z "$DOMAIN" ]      && read -rp "Domena (np. example.com): " DOMAIN
