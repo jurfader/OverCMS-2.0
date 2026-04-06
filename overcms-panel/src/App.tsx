@@ -9,6 +9,10 @@ import { UsersPage } from '@/pages/Users';
 import { SettingsPage } from '@/pages/Settings';
 import { ModulesPage } from '@/pages/Modules';
 import { MarketplacePage } from '@/pages/Marketplace';
+import { TemplatesPage } from '@/pages/Templates';
+import { NavigationPage } from '@/pages/Navigation';
+import { BackupsPage } from '@/pages/Backups';
+import { SecurityPage } from '@/pages/Security';
 import { Placeholder } from '@/pages/Placeholder';
 
 const qc = new QueryClient({
@@ -28,12 +32,14 @@ export function App() {
             <Route path="/posts" element={<Placeholder title="Treści" description="Wpisy bloga" />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/seo" element={<SeoPage />} />
-            <Route path="/navigation" element={<Placeholder title="Nawigacja" description="Menu witryny" />} />
-            <Route path="/templates" element={<Placeholder title="Szablony" description="Szablony stron Divi" />} />
+            <Route path="/navigation" element={<NavigationPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/modules" element={<ModulesPage />} />
             <Route path="/marketplace" element={<MarketplacePage />} />
+            <Route path="/backups" element={<BackupsPage />} />
+            <Route path="/security" element={<SecurityPage />} />
           </Routes>
         </Shell>
       </HashRouter>

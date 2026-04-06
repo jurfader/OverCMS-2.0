@@ -13,6 +13,8 @@ import {
   Settings,
   Puzzle,
   ShoppingBag,
+  Database,
+  Shield,
   ChevronLeft,
   ChevronRight,
   Sparkles,
@@ -57,6 +59,8 @@ const sections: NavSection[] = [
       { label: 'Ustawienia', to: '/settings', icon: Settings },
       { label: 'Moduły', to: '/modules', icon: Puzzle },
       { label: 'Marketplace', to: '/marketplace', icon: ShoppingBag },
+      { label: 'Backupy', to: '/backups', icon: Database },
+      { label: 'Bezpieczeństwo', to: '/security', icon: Shield },
     ],
   },
 ];

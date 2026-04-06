@@ -15,6 +15,10 @@ final class RestRouter
             ModulesController::register();
             MarketplaceController::register();
             MediaController::register();
+            TemplatesController::register();
+            NavigationController::register();
+            BackupController::register();
+            SecurityController::register();
         });
     }
 

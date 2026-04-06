@@ -167,3 +167,91 @@ export interface MarketplaceResponse {
     results: number;
   };
 }
+
+// ── Templates ───────────────────────────────────────────────
+export interface DiviTemplate {
+  id: number;
+  title: string;
+  slug: string;
+  type: string;
+  builtFor: string;
+  thumb: string | null;
+  createdAt: string;
+  modifiedAt: string;
+}
+
+export interface TemplatesResponse {
+  diviActive: boolean;
+  templates: DiviTemplate[];
+  count?: number;
+  message?: string;
+}
+
+// ── Navigation ──────────────────────────────────────────────
+export interface NavMenu {
+  id: number;
+  name: string;
+  slug: string;
+  count: number;
+  locations: string[];
+}
+
+export interface NavMenuItem {
+  id: number;
+  title: string;
+  url: string;
+  type: string;
+  object: string;
+  objectId: number;
+  parent: number;
+  order: number;
+  target: string;
+  classes: string;
+}
+
+export interface MenuDetail {
+  id: number;
+  name: string;
+  items: NavMenuItem[];
+}
+
+export interface MenuSources {
+  pages: { id: number; title: string; url: string }[];
+  posts: { id: number; title: string; url: string }[];
+  categories: { id: number; title: string; url: string }[];
+}
+
+// ── Backups ─────────────────────────────────────────────────
+export interface BackupItem {
+  filename: string;
+  sizeMb: number;
+  createdAt: string;
+}
+
+export interface BackupsResponse {
+  items: BackupItem[];
+  totalSizeMb: number;
+  dir?: string;
+}
+
+// ── Security ────────────────────────────────────────────────
+export interface LoginAttempt {
+  username: string;
+  ip: string;
+  userAgent: string;
+  timestamp: string;
+}
+
+export interface SecurityCheck {
+  id: string;
+  label: string;
+  ok: boolean;
+  level: 'critical' | 'warning' | 'info';
+}
+
+export interface SecurityStatus {
+  score: number;
+  maxScore: number;
+  percent: number;
+  checks: SecurityCheck[];
+}
