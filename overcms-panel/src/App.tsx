@@ -8,6 +8,7 @@ import { SeoPage } from '@/pages/Seo';
 import { UsersPage } from '@/pages/Users';
 import { SettingsPage } from '@/pages/Settings';
 import { ModulesPage } from '@/pages/Modules';
+import { MarketplacePage } from '@/pages/Marketplace';
 import { Placeholder } from '@/pages/Placeholder';
 
 const qc = new QueryClient({
@@ -32,6 +33,7 @@ export function App() {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/modules" element={<ModulesPage />} />
+            <Route path="/marketplace" element={<MarketplacePage />} />
           </Routes>
         </Shell>
       </HashRouter>

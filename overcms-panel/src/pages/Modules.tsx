@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { ModulesResponse } from '@/lib/types';
@@ -9,6 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 
 export function ModulesPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { data, isLoading } = useQuery({
     queryKey: ['modules'],
     queryFn: () => api<ModulesResponse>('overcms/v1/modules'),
@@ -24,14 +26,10 @@ export function ModulesPage() {
     <>
       <PageHeader
         title="Moduły"
-        description="Zainstalowane pluginy WordPress oraz dostęp do oficjalnego marketplace."
+        description="Zainstalowane pluginy. Aby dodać nowe, użyj Marketplace."
         actions={
-          <Button
-            icon={<Plus />}
-            onClick={() => data && window.open(data.installNewUrl, '_blank')}
-            disabled={!data}
-          >
-            Marketplace WordPress.org
+          <Button icon={<Plus />} onClick={() => navigate('/marketplace')}>
+            Otwórz Marketplace
           </Button>
         }
       />

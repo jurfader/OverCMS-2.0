@@ -15,7 +15,51 @@ final class PanelLoader
     {
         add_action('admin_menu', [self::class, 'addMenuPage']);
         add_action('admin_enqueue_scripts', [self::class, 'enqueueAssets']);
+        add_action('admin_enqueue_scripts', [self::class, 'dequeueWpCoreNoise'], 999);
         add_action('admin_head', [self::class, 'injectFullscreenStyles']);
+    }
+
+    /**
+     * Wp-router, wp-core-commands, wp-edit-site itp. ładują się jako globale
+     * w każdej stronie wp-admin i oczekują obecności window.React. Nasz panel
+     * używa React tylko bundlowanego przez Vite (nie jako global), więc
+     * te skrypty rzucają w konsoli błędy typu:
+     *   Cannot read properties of undefined (reading 'createContext')
+     *   Cannot read properties of undefined (reading 'jsx')
+     *   Cannot read properties of undefined (reading 'initializeCommandPalette')
+     * Wszystkie te skrypty są zbędne na naszej własnej stronie panelu —
+     * wyrejestrowujemy je gdy jesteśmy na toplevel_page_overcms.
+     */
+    public static function dequeueWpCoreNoise(string $hook): void
+    {
+        if ($hook !== 'toplevel_page_' . self::SLUG) {
+            return;
+        }
+        $noisy = [
+            'wp-router',
+            'wp-core-commands',
+            'wp-commands',
+            'wp-edit-site',
+            'wp-edit-post',
+            'wp-block-editor',
+            'wp-block-library',
+            'wp-block-directory',
+            'wp-format-library',
+            'wp-nux',
+            'wp-preferences',
+            'wp-plugins',
+            'wp-priority-queue',
+            'wp-reusable-blocks',
+            'wp-rich-text',
+            'wp-style-engine',
+            'wp-warning',
+        ];
+        foreach ($noisy as $handle) {
+            wp_dequeue_script($handle);
+            wp_deregister_script($handle);
+            wp_dequeue_style($handle);
+            wp_deregister_style($handle);
+        }
     }
 
     public static function addMenuPage(): void

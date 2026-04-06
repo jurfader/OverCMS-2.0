@@ -43,6 +43,7 @@ add_action('plugins_loaded', static function (): void {
     \OverCMS\Core\Hardening::register();
     \OverCMS\Core\PerformanceOptimizer::register();
     \OverCMS\Core\AdminCleanup::register();
+    \OverCMS\Core\LoginCustomization::register();
     \OverCMS\Core\PanelLoader::register();
     \OverCMS\Core\Redirects::register();
     \OverCMS\Core\Updater::register();

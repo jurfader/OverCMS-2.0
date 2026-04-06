@@ -13,6 +13,7 @@ final class RestRouter
             SiteController::register();
             SeoController::register();
             ModulesController::register();
+            MarketplaceController::register();
             MediaController::register();
         });
     }

@@ -12,6 +12,7 @@ import {
   Users,
   Settings,
   Puzzle,
+  ShoppingBag,
   ChevronLeft,
   ChevronRight,
   Sparkles,
@@ -55,6 +56,7 @@ const sections: NavSection[] = [
       { label: 'Użytkownicy', to: '/users', icon: Users },
       { label: 'Ustawienia', to: '/settings', icon: Settings },
       { label: 'Moduły', to: '/modules', icon: Puzzle },
+      { label: 'Marketplace', to: '/marketplace', icon: ShoppingBag },
     ],
   },
 ];

@@ -139,3 +139,31 @@ export interface WpUser {
   roles?: string[];
   avatar_urls: Record<string, string>;
 }
+
+export interface MarketplacePlugin {
+  slug: string;
+  name: string;
+  shortDescription: string;
+  author: string;
+  version: string | null;
+  rating: number | null;
+  numRatings: number;
+  activeInstalls: number;
+  icon: string | null;
+  iconHigh: string | null;
+  lastUpdated: string | null;
+  requiresPhp: string | null;
+  requiresWp: string | null;
+  testedWp: string | null;
+  installed: boolean;
+  active: boolean;
+}
+
+export interface MarketplaceResponse {
+  items: MarketplacePlugin[];
+  info: {
+    page: number;
+    pages: number;
+    results: number;
+  };
+}
