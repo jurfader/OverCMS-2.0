@@ -68,11 +68,11 @@ done
 # ---------- Requirements ----------
 log "Sprawdzam wymagania systemu…"
 
-command -v php >/dev/null      || fail "Brak PHP. Zainstaluj: sudo apt install php8.2-cli php8.2-mysql php8.2-mbstring php8.2-xml php8.2-zip php8.2-gd php8.2-intl php8.2-curl"
+command -v php >/dev/null      || fail "Brak PHP. Zainstaluj: sudo apt install php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-zip php8.3-gd php8.3-intl php8.3-curl"
 command -v mysql >/dev/null    || warn "Brak klienta mysql. Tworzenie bazy zostanie pominięte."
 
 PHP_VER=$(php -r 'echo PHP_VERSION_ID;')
-[ "$PHP_VER" -ge 80200 ] || fail "Wymagany PHP 8.2+. Aktualnie: $(php -r 'echo PHP_VERSION;')"
+[ "$PHP_VER" -ge 80300 ] || fail "Wymagany PHP 8.3+. Aktualnie: $(php -r 'echo PHP_VERSION;')"
 ok "PHP $(php -r 'echo PHP_VERSION;')"
 
 # Vendor: jeśli paczka release nie zawiera vendor/, potrzebny composer

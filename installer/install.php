@@ -6,7 +6,7 @@
  *   https://twoja-domena.pl/install.php
  * Po zakończeniu plik usuwa się sam.
  *
- * Wymaga: PHP 8.2+, Composer w PATH lub composer.phar w katalogu projektu.
+ * Wymaga: PHP 8.3+, Composer w PATH lub composer.phar w katalogu projektu.
  */
 
 declare(strict_types=1);
@@ -23,7 +23,7 @@ function h(string $s): string { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8')
 function checkRequirements(): array
 {
     return [
-        'PHP 8.2+'        => PHP_VERSION_ID >= 80200,
+        'PHP 8.3+'        => PHP_VERSION_ID >= 80300,
         'ext: pdo_mysql'  => extension_loaded('pdo_mysql') || extension_loaded('mysqli'),
         'ext: mbstring'   => extension_loaded('mbstring'),
         'ext: gd'         => extension_loaded('gd'),
