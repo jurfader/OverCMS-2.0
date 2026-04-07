@@ -48,6 +48,7 @@ spl_autoload_register(static function (string $class): void {
 
 // Bootstrap modules
 add_action('plugins_loaded', static function (): void {
+    \OverCMS\Core\UrlMasking::register();
     \OverCMS\Core\Hardening::register();
     \OverCMS\Core\PerformanceOptimizer::register();
     \OverCMS\Core\AdminCleanup::register();

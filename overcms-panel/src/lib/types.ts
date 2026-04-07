@@ -45,7 +45,7 @@ export const boot: OvercmsBoot = window.OVERCMS_BOOT ?? {
     uploadFiles: true,
     listUsers: true,
   },
-  logoutUrl: '/wp-login.php?action=logout',
+  logoutUrl: '/login?action=logout',
 };
 
 export interface DashboardStats {
