@@ -146,9 +146,15 @@ final class ThemesController
 
     public static function activate(\WP_REST_Request $req): \WP_REST_Response
     {
-        $slug = sanitize_key((string) $req['slug']);
+        // NIE używamy sanitize_key() bo lowercase'uje slug ('Divi' → 'divi'),
+        // a nazwy motywów na Linuxie są case-sensitive (folder /themes/Divi).
+        // Whitelist [A-Za-z0-9_.-] jest wymuszony przez regex w register_rest_route.
+        $slug = (string) $req['slug'];
+        if (!preg_match('/^[A-Za-z0-9_.-]+$/', $slug)) {
+            return new \WP_REST_Response(['error' => 'Niepoprawny slug motywu'], 400);
+        }
         if (!wp_get_theme($slug)->exists()) {
-            return new \WP_REST_Response(['error' => 'Motyw nie istnieje'], 404);
+            return new \WP_REST_Response(['error' => 'Motyw nie istnieje: ' . $slug], 404);
         }
         switch_theme($slug);
         return new \WP_REST_Response([
@@ -159,7 +165,10 @@ final class ThemesController
 
     public static function delete(\WP_REST_Request $req): \WP_REST_Response
     {
-        $slug = sanitize_key((string) $req['slug']);
+        $slug = (string) $req['slug'];
+        if (!preg_match('/^[A-Za-z0-9_.-]+$/', $slug)) {
+            return new \WP_REST_Response(['error' => 'Niepoprawny slug motywu'], 400);
+        }
         $theme = wp_get_theme($slug);
         if (!$theme->exists()) {
             return new \WP_REST_Response(['error' => 'Motyw nie istnieje'], 404);
