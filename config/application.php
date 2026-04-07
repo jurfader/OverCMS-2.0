@@ -96,6 +96,22 @@ Config::define('WP_HOME', env('WP_HOME'));
 Config::define('WP_SITEURL', env('WP_SITEURL'));
 
 /**
+ * Cookie paths
+ *
+ * Bedrock instaluje WP core w web/wp/, więc WordPress domyślnie ustawia
+ * COOKIEPATH na '/wp/'. Konsekwencja: zalogowany admin nie ma cookies sesji
+ * gdy odwiedza front witryny pod /, więc et_fb=1 (Divi visual builder) jest
+ * ignorowane → klient widzi normalny frontend zamiast edytora.
+ *
+ * Wymuszamy COOKIEPATH na '/' żeby cookies sesji były dostępne na całej domenie,
+ * a ADMIN_COOKIE_PATH zostaje wskazujące na faktyczny wp-admin.
+ */
+Config::define('COOKIE_DOMAIN', '');
+Config::define('COOKIEPATH', '/');
+Config::define('SITECOOKIEPATH', '/');
+Config::define('ADMIN_COOKIE_PATH', '/wp/wp-admin');
+
+/**
  * Custom Content Directory
  */
 Config::define('CONTENT_DIR', '/app');

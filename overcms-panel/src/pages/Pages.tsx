@@ -33,13 +33,17 @@ export function PagesPage() {
       }),
     onSuccess: (page) => {
       qc.invalidateQueries({ queryKey: ['pages'] });
-      // Otwórz nową stronę od razu w Divi visual builderze
-      window.open(`${boot.siteUrl}?p=${page.id}&et_fb=1&PageSpeed=off`, '_blank');
+      editInDivi(page);
     },
   });
 
   const editInDivi = (page: WpPage) => {
-    window.open(`${boot.siteUrl}?p=${page.id}&et_fb=1&PageSpeed=off`, '_blank');
+    // Preferuj pretty permalink (page.link), fallback do ?p=ID dla nowo utworzonych
+    // stron które jeszcze nie mają permalinka. Divi w nowych wersjach lepiej
+    // rozpoznaje permalink niż URL z query string ?p=ID.
+    const baseUrl = page.link && !page.link.endsWith('=') ? page.link : `${boot.siteUrl}?p=${page.id}`;
+    const sep = baseUrl.includes('?') ? '&' : '?';
+    window.open(`${baseUrl}${sep}et_fb=1&PageSpeed=off`, '_blank');
   };
 
   return (
