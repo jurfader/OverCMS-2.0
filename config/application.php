@@ -99,17 +99,24 @@ Config::define('WP_SITEURL', env('WP_SITEURL'));
  * Cookie paths
  *
  * Bedrock instaluje WP core w web/wp/, więc WordPress domyślnie ustawia
- * COOKIEPATH na '/wp/'. Konsekwencja: zalogowany admin nie ma cookies sesji
- * gdy odwiedza front witryny pod /, więc et_fb=1 (Divi visual builder) jest
- * ignorowane → klient widzi normalny frontend zamiast edytora.
+ * COOKIEPATH na '/wp/' i ADMIN_COOKIE_PATH na '/wp/wp-admin'. Konsekwencje:
  *
- * Wymuszamy COOKIEPATH na '/' żeby cookies sesji były dostępne na całej domenie,
- * a ADMIN_COOKIE_PATH zostaje wskazujące na faktyczny wp-admin.
+ *   1. Frontend witryny (et_fb=1 dla Divi visual builder) nie ma cookies
+ *      sesji — klient widzi publiczny frontend zamiast edytora.
+ *
+ *   2. UrlMasking maskuje wp-admin jako /admin/ (przez nginx rewrite + PHP
+ *      filtry). Browser widzi requesty do /admin/... i sprawdza cookies dla
+ *      tego pathu. Jeśli ADMIN_COOKIE_PATH=/wp/wp-admin to cookie auth NIE
+ *      pasuje do /admin/ → browser go nie wysyła → WordPress widzi gościa
+ *      → redirect do /login?reauth=1 → pętla.
+ *
+ * Fix: COOKIEPATH=/ (logged_in cookie globalnie) + ADMIN_COOKIE_PATH=/admin
+ * (auth cookie pasujący do zamaskowanego pathu).
  */
 Config::define('COOKIE_DOMAIN', '');
 Config::define('COOKIEPATH', '/');
 Config::define('SITECOOKIEPATH', '/');
-Config::define('ADMIN_COOKIE_PATH', '/wp/wp-admin');
+Config::define('ADMIN_COOKIE_PATH', '/admin');
 
 /**
  * Custom Content Directory
