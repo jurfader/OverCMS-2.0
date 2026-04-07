@@ -197,10 +197,27 @@ Config::define('SCRIPT_DEBUG', false);
 ini_set('display_errors', '0');
 
 /**
- * Allow WordPress to detect HTTPS when used behind a reverse proxy or a load balancer
- * See https://codex.wordpress.org/Function_Reference/is_ssl#Notes
+ * Allow WordPress to detect HTTPS when used behind a reverse proxy or a load balancer.
+ *
+ * Wykrywamy HTTPS w 3 niezależnych miejscach:
+ *   1. X-Forwarded-Proto       — standardowy nginx reverse proxy
+ *   2. CF-Visitor              — Cloudflare proxy (JSON {"scheme":"https"})
+ *   3. X-Forwarded-Ssl         — niektóre load balancery
+ *
+ * Bez tego WordPress generuje wewnętrzne redirecty na http:// nawet gdy klient
+ * łączy się przez https://, co powoduje pętle na Cloudflare i mixed content.
  */
 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+    $_SERVER['HTTPS'] = 'on';
+}
+if (isset($_SERVER['HTTP_CF_VISITOR']) && str_contains($_SERVER['HTTP_CF_VISITOR'], '"scheme":"https"')) {
+    $_SERVER['HTTPS'] = 'on';
+}
+if (isset($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') {
+    $_SERVER['HTTPS'] = 'on';
+}
+// Niektóre proxies wysyłają X-Forwarded-Port=443
+if (isset($_SERVER['HTTP_X_FORWARDED_PORT']) && $_SERVER['HTTP_X_FORWARDED_PORT'] === '443') {
     $_SERVER['HTTPS'] = 'on';
 }
 
