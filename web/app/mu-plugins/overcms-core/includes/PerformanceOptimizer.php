@@ -40,6 +40,14 @@ final class PerformanceOptimizer
             return $tag;
         }
 
+        // Divi visual builder używa wp_add_inline_script() po skryptach globalnych
+        // (lodash, wp-i18n, moment). Inline-skrypty są synchroniczne — gdyby
+        // główny <script> miał defer, inline odpaliłby się przed załadowaniem
+        // skryptu i dostał "_ is not defined" / "wp is not defined".
+        if (!empty($_GET['et_fb'])) {
+            return $tag;
+        }
+
         // Skrypty krytyczne — zostaw bez defer
         $critical = ['jquery-core', 'jquery-migrate'];
         if (in_array($handle, $critical, true)) {

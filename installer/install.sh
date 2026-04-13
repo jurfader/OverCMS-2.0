@@ -477,6 +477,8 @@ HOME_ID=$($WP_CLI post create --post_type=page --post_status=publish --post_titl
     --porcelain --path=web/wp)
 $WP_CLI option update show_on_front 'page' --path=web/wp
 $WP_CLI option update page_on_front "$HOME_ID" --path=web/wp
+# Włącz Divi builder dla strony startowej (wymagane przez Divi 5 do visual buildera)
+$WP_CLI post meta update "$HOME_ID" _et_pb_use_builder on --path=web/wp
 ok "Strona startowa: $HOME_ID"
 
 # ---------- Summary ----------
