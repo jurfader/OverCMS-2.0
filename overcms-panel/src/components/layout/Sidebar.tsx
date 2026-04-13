@@ -19,7 +19,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  ExternalLink,
 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { boot } from '@/lib/types';
 import { cn } from '@/lib/cn';
@@ -118,6 +120,40 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </div>
           </div>
         ))}
+
+        {/* Plugin pages (registered via overcms_plugin_pages filter) */}
+        {boot.pluginPages?.length > 0 && (
+          <div>
+            {!collapsed && (
+              <p className="text-[10px] uppercase tracking-widest text-[var(--color-subtle)] px-3 mb-1.5">
+                Pluginy
+              </p>
+            )}
+            <div className="space-y-0.5">
+              {boot.pluginPages.map((page) => {
+                const Icon = ((LucideIcons as unknown) as Record<string, ComponentType<{ className?: string }>>)[page.icon]
+                  ?? ExternalLink;
+                const link = (
+                  <a
+                    key={page.adminUrl}
+                    href={page.adminUrl}
+                    className={cn(
+                      'relative flex items-center gap-2.5 h-9 px-3 rounded-[var(--radius)] text-sm transition-colors',
+                      'text-[var(--color-muted-foreground)] hover:bg-[var(--color-surface-elevated)] hover:text-[var(--color-foreground)]',
+                      collapsed && 'justify-center',
+                    )}
+                  >
+                    <Icon className="w-4 h-4 shrink-0" />
+                    {!collapsed && <span className="truncate">{page.label}</span>}
+                  </a>
+                );
+                return collapsed
+                  ? <Tooltip key={page.adminUrl} label={page.label}>{link}</Tooltip>
+                  : link;
+              })}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Footer */}

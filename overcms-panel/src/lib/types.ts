@@ -23,6 +23,7 @@ export interface OvercmsBoot {
   };
   logoutUrl: string;
   hasWooCommerce: boolean;
+  pluginPages: Array<{ label: string; icon: string; adminUrl: string }>;
 }
 
 declare global {
@@ -48,6 +49,7 @@ export const boot: OvercmsBoot = window.OVERCMS_BOOT ?? {
   },
   logoutUrl: '/login?action=logout',
   hasWooCommerce: false,
+  pluginPages: [],
 };
 
 // WooCommerce types
