@@ -199,8 +199,9 @@ final class BackupController
         // 1. Przywróć bazę danych
         $sqlFile = $tmpDir . '/database.sql';
         if (file_exists($sqlFile)) {
+            // Uwaga: --no-tablespaces to flaga mysqldump, nie mysql clienta — nie używamy jej tu
             $restoreCmd = sprintf(
-                'mysql --no-tablespaces -h %s -u %s -p%s %s < %s 2>&1',
+                'mysql -h %s -u %s -p%s %s < %s 2>&1',
                 escapeshellarg(DB_HOST),
                 escapeshellarg(DB_USER),
                 escapeshellarg(DB_PASSWORD),
@@ -210,7 +211,9 @@ final class BackupController
             exec($restoreCmd, $dbOut, $dbCode);
             if ($dbCode !== 0) {
                 self::rrmdir($tmpDir);
-                return new \WP_REST_Response(['error' => 'mysql restore failed: ' . implode("\n", $dbOut)], 500);
+                return new \WP_REST_Response([
+                    'error' => 'mysql restore failed (exit ' . $dbCode . '): ' . implode("\n", $dbOut),
+                ], 500);
             }
         }
 
