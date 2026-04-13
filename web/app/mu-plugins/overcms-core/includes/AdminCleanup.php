@@ -14,7 +14,14 @@ final class AdminCleanup
         add_action('wp_before_admin_bar_render', [self::class, 'cleanAdminBar']);
         add_action('wp_dashboard_setup', [self::class, 'removeDashboardWidgets'], 999);
         add_action('admin_init', [self::class, 'removeHelloDolly']);
-        add_filter('show_admin_bar', '__return_false');
+        // Ukryj admin bar wszędzie, POZA trybem Divi visual builder (?et_fb=1).
+        // Divi sprawdza is_admin_bar_showing() żeby załadować swoje skrypty — bez tego builder się nie odpala.
+        add_filter('show_admin_bar', static function (bool $show): bool {
+            if (!empty($_GET['et_fb'])) {
+                return true;
+            }
+            return false;
+        });
 
         // Wyłącz komentarze całkowicie
         add_action('admin_init', [self::class, 'disableCommentsAdmin']);
