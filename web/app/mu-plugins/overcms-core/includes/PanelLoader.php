@@ -17,6 +17,28 @@ final class PanelLoader
         add_action('admin_enqueue_scripts', [self::class, 'enqueueAssets']);
         add_action('admin_enqueue_scripts', [self::class, 'dequeueWpCoreNoise'], 999);
         add_action('admin_head', [self::class, 'injectFullscreenStyles']);
+        add_action('admin_head', [self::class, 'injectEmbedStyles']);
+    }
+
+    /**
+     * Tryb embed: gdy ?overcms_embed=1 ukryj sidebar, topbar i footer WP
+     * (strona ładowana w iframie panelu OverCMS — pokazujemy tylko treść Divi).
+     */
+    public static function injectEmbedStyles(): void
+    {
+        if (empty($_GET['overcms_embed'])) {
+            return;
+        }
+        echo '<style>
+            #wpadminbar,
+            #adminmenuback, #adminmenuwrap, #adminmenu,
+            #wpfooter,
+            .update-nag, .updated, .notice, div.error, div.updated { display: none !important; }
+            html.wp-toolbar { padding-top: 0 !important; }
+            #wpcontent { margin-left: 0 !important; padding-top: 0 !important; }
+            #wpbody { padding-top: 0 !important; }
+            #wpbody-content { padding-bottom: 0 !important; }
+        </style>';
     }
 
     /**

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Layers, AlertTriangle, Plus, ExternalLink, LayoutTemplate, BookMarked, Sliders } from 'lucide-react';
+import { Layers, AlertTriangle, Plus, X, LayoutTemplate, BookMarked, Sliders } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { TemplatesResponse, DiviTemplate } from '@/lib/types';
 import { boot } from '@/lib/types';
@@ -17,6 +17,7 @@ export function TemplatesPage() {
 
   const [selected, setSelected] = useState<DiviTemplate | null>(null);
   const [newTitle, setNewTitle] = useState('');
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
 
   const useTemplate = useMutation({
     mutationFn: ({ templateId, title }: { templateId: number; title: string }) =>
@@ -44,65 +45,25 @@ export function TemplatesPage() {
       <div className="mb-6">
         <p className="text-xs uppercase tracking-widest text-[var(--color-subtle)] mb-3">Narzędzia projektowe</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <a
-            href={`${adminUrl}admin.php?page=et_theme_builder`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="glass-card rounded-[var(--radius-lg)] p-4 flex items-start gap-3 hover:bg-[var(--color-surface-elevated)] transition-colors group"
-          >
-            <span className="w-9 h-9 rounded-[var(--radius)] gradient-bg flex items-center justify-center shrink-0">
-              <LayoutTemplate className="w-4 h-4 text-white" />
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-[var(--color-foreground)]">Theme Builder</p>
-                <ExternalLink className="w-3 h-3 text-[var(--color-subtle)] group-hover:text-[var(--color-primary)] transition-colors" />
-              </div>
-              <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
-                Globalne szablony stron — nagłówek, stopka, body
-              </p>
-            </div>
-          </a>
-
-          <a
-            href={`${adminUrl}admin.php?page=et_pb_layouts`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="glass-card rounded-[var(--radius-lg)] p-4 flex items-start gap-3 hover:bg-[var(--color-surface-elevated)] transition-colors group"
-          >
-            <span className="w-9 h-9 rounded-[var(--radius)] bg-[var(--color-surface-elevated)] flex items-center justify-center shrink-0">
-              <BookMarked className="w-4 h-4 text-[var(--color-primary)]" />
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-[var(--color-foreground)]">Biblioteka Divi</p>
-                <ExternalLink className="w-3 h-3 text-[var(--color-subtle)] group-hover:text-[var(--color-primary)] transition-colors" />
-              </div>
-              <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
-                Zapisane sekcje, wiersze i layouty
-              </p>
-            </div>
-          </a>
-
-          <a
-            href={`${adminUrl}customize.php`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="glass-card rounded-[var(--radius-lg)] p-4 flex items-start gap-3 hover:bg-[var(--color-surface-elevated)] transition-colors group"
-          >
-            <span className="w-9 h-9 rounded-[var(--radius)] bg-[var(--color-surface-elevated)] flex items-center justify-center shrink-0">
-              <Sliders className="w-4 h-4 text-[var(--color-primary)]" />
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-[var(--color-foreground)]">Customizer</p>
-                <ExternalLink className="w-3 h-3 text-[var(--color-subtle)] group-hover:text-[var(--color-primary)] transition-colors" />
-              </div>
-              <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
-                Globalne style, kolory i czcionki motywu
-              </p>
-            </div>
-          </a>
+          <DesignToolCard
+            icon={<LayoutTemplate className="w-4 h-4 text-white" />}
+            iconClass="gradient-bg"
+            title="Theme Builder"
+            description="Globalne szablony stron — nagłówek, stopka, body"
+            onClick={() => setEmbedUrl(`${adminUrl}admin.php?page=et_theme_builder&overcms_embed=1`)}
+          />
+          <DesignToolCard
+            icon={<BookMarked className="w-4 h-4 text-[var(--color-primary)]" />}
+            title="Biblioteka Divi"
+            description="Zapisane sekcje, wiersze i layouty"
+            onClick={() => setEmbedUrl(`${adminUrl}admin.php?page=et_pb_layouts&overcms_embed=1`)}
+          />
+          <DesignToolCard
+            icon={<Sliders className="w-4 h-4 text-[var(--color-primary)]" />}
+            title="Customizer"
+            description="Globalne style, kolory i czcionki motywu"
+            onClick={() => setEmbedUrl(`${adminUrl}customize.php`)}
+          />
         </div>
       </div>
 
@@ -150,6 +111,27 @@ export function TemplatesPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Iframe overlay — Divi tools bez WP chrome */}
+      {embedUrl && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-background)]">
+          <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
+            <span className="text-xs text-[var(--color-muted-foreground)]">{embedUrl.split('?')[0].split('/').pop()}</span>
+            <button
+              onClick={() => setEmbedUrl(null)}
+              className="w-7 h-7 flex items-center justify-center rounded-[var(--radius)] hover:bg-[var(--color-surface-elevated)] text-[var(--color-muted-foreground)] transition-colors"
+              aria-label="Zamknij"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <iframe
+            src={embedUrl}
+            className="flex-1 w-full border-0"
+            title="Divi"
+          />
+        </div>
       )}
 
       {/* Modal "Use template" */}
@@ -200,6 +182,31 @@ export function TemplatesPage() {
         </div>
       )}
     </>
+  );
+}
+
+function DesignToolCard({
+  icon, iconClass, title, description, onClick,
+}: {
+  icon: React.ReactNode;
+  iconClass?: string;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="glass-card rounded-[var(--radius-lg)] p-4 flex items-start gap-3 hover:bg-[var(--color-surface-elevated)] transition-colors text-left w-full group"
+    >
+      <span className={`w-9 h-9 rounded-[var(--radius)] ${iconClass ?? 'bg-[var(--color-surface-elevated)]'} flex items-center justify-center shrink-0`}>
+        {icon}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-[var(--color-foreground)]">{title}</p>
+        <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">{description}</p>
+      </div>
+    </button>
   );
 }
 
