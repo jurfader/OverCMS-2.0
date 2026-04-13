@@ -124,6 +124,9 @@ export interface ModuleItem {
   author: string;
   pluginUri: string;
   active: boolean;
+  updateAvailable: boolean;
+  newVersion: string | null;
+  settingsUrl: string | null;
 }
 
 export interface ModulesResponse {

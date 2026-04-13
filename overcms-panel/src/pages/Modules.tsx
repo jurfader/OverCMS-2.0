@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Upload, CheckCircle2, AlertCircle, Loader2, Palette } from 'lucide-react';
+import { Plus, Upload, CheckCircle2, AlertCircle, Loader2, Palette, RefreshCw, Settings, ArrowUpCircle, X } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
-import type { ModulesResponse } from '@/lib/types';
+import type { ModulesResponse, ModuleItem } from '@/lib/types';
+import { boot } from '@/lib/types';
 import { PageHeader } from '@/components/layout/Shell';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -32,6 +33,9 @@ export function ModulesPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [showThemes, setShowThemes] = useState(false);
+  const [settingsUrl, setSettingsUrl] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [updateResults, setUpdateResults] = useState<Record<string, { ok: boolean; msg: string }>>({});
 
   const { data, isLoading } = useQuery({
     queryKey: ['modules'],
@@ -47,6 +51,37 @@ export function ModulesPage() {
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
       api(`overcms/v1/modules/${id}/${active ? 'deactivate' : 'activate'}`, { method: 'POST' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['modules'] }),
+  });
+
+  const checkUpdates = useMutation({
+    mutationFn: () => api<{ checked: boolean; updates: { file: string; newVersion: string | null }[]; count: number }>(
+      'overcms/v1/modules/check-updates',
+      { method: 'POST' }
+    ),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['modules'] }),
+  });
+
+  const updatePlugin = useMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      api<{ success: boolean; newVersion: string | null }>(`overcms/v1/modules/${id}/update`, { method: 'POST' }),
+    onMutate: ({ id }) => setUpdatingId(id),
+    onSuccess: (res, { id }) => {
+      setUpdatingId(null);
+      setUpdateResults(prev => ({
+        ...prev,
+        [id]: { ok: true, msg: `Zaktualizowano do v${res.newVersion ?? '?'}` },
+      }));
+      qc.invalidateQueries({ queryKey: ['modules'] });
+      setTimeout(() => setUpdateResults(prev => { const n = { ...prev }; delete n[id]; return n; }), 8000);
+    },
+    onError: (err, { id }) => {
+      setUpdatingId(null);
+      setUpdateResults(prev => ({
+        ...prev,
+        [id]: { ok: false, msg: err instanceof ApiError ? err.message : 'Błąd aktualizacji' },
+      }));
+      setTimeout(() => setUpdateResults(prev => { const n = { ...prev }; delete n[id]; return n; }), 8000);
+    },
   });
 
   const uploadTheme = useMutation({
@@ -81,23 +116,38 @@ export function ModulesPage() {
     },
   });
 
+  const updateCount = data?.modules.filter(m => m.updateAvailable).length ?? 0;
+  const adminUrl = boot.adminUrl.replace(/\/?$/, '/');
+
   return (
     <>
       <PageHeader
         title="Moduły"
-        description="Zainstalowane pluginy i motywy. Aby dodać nowe pluginy, użyj Marketplace."
+        description="Zainstalowane pluginy i motywy."
         actions={
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              icon={<Upload />}
-              onClick={() => fileRef.current?.click()}
-              disabled={uploadTheme.isPending}
-            >
-              {uploadTheme.isPending ? 'Wgrywanie…' : 'Wgraj motyw (.zip)'}
-            </Button>
+            {!showThemes && (
+              <Button
+                variant="outline"
+                icon={checkUpdates.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                onClick={() => checkUpdates.mutate()}
+                disabled={checkUpdates.isPending}
+              >
+                {checkUpdates.isPending ? 'Sprawdzam…' : 'Sprawdź aktualizacje'}
+              </Button>
+            )}
+            {showThemes && (
+              <Button
+                variant="outline"
+                icon={<Upload />}
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadTheme.isPending}
+              >
+                {uploadTheme.isPending ? 'Wgrywanie…' : 'Wgraj motyw (.zip)'}
+              </Button>
+            )}
             <Button icon={<Plus />} onClick={() => navigate('/marketplace')}>
-              Otwórz Marketplace
+              Marketplace
             </Button>
           </div>
         }
@@ -128,17 +178,22 @@ export function ModulesPage() {
         </div>
       )}
 
-      {/* Toggle: Themes / Plugins */}
+      {/* Tabs */}
       <div className="flex items-center gap-1 mb-4 border-b border-[var(--color-border)]">
         <button
           onClick={() => setShowThemes(false)}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-2 ${
             !showThemes
               ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
               : 'border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
           }`}
         >
           Pluginy
+          {updateCount > 0 && (
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold bg-[var(--color-warning)] text-black">
+              {updateCount}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setShowThemes(true)}
@@ -193,28 +248,126 @@ export function ModulesPage() {
         <div className="space-y-3">
           {isLoading && <p className="text-sm text-[var(--color-muted-foreground)]">Ładowanie…</p>}
           {data?.modules.map((m) => (
-            <div key={m.id} className="glass-card rounded-[var(--radius-lg)] p-5 flex items-start gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-sm font-semibold text-[var(--color-foreground)]">{m.name}</h3>
-                  <Badge variant="outline">v{m.version}</Badge>
-                  {m.active && <Badge variant="success">aktywny</Badge>}
-                </div>
-                <p
-                  className="text-xs text-[var(--color-muted-foreground)] line-clamp-2"
-                  dangerouslySetInnerHTML={{ __html: m.description }}
-                />
-                <p className="text-[10px] text-[var(--color-subtle)] mt-1">{m.author}</p>
-              </div>
-              <Switch
-                checked={m.active}
-                onChange={() => toggle.mutate({ id: m.id, active: m.active })}
-                aria-label={`Aktywuj ${m.name}`}
-              />
-            </div>
+            <PluginRow
+              key={m.id}
+              module={m}
+              isUpdating={updatingId === m.id}
+              result={updateResults[m.id] ?? null}
+              onToggle={() => toggle.mutate({ id: m.id, active: m.active })}
+              onUpdate={() => updatePlugin.mutate({ id: m.id })}
+              onSettings={() => {
+                if (m.settingsUrl) {
+                  // Append overcms_embed param to hide WP chrome
+                  const url = new URL(m.settingsUrl);
+                  url.searchParams.set('overcms_embed', '1');
+                  setSettingsUrl(url.toString());
+                }
+              }}
+            />
           ))}
         </div>
       )}
+
+      {/* Settings iframe overlay */}
+      {settingsUrl && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-background)]">
+          <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
+            <span className="text-xs text-[var(--color-muted-foreground)]">
+              {settingsUrl.split('?')[0].split('/').pop()}
+            </span>
+            <button
+              onClick={() => setSettingsUrl(null)}
+              className="w-7 h-7 flex items-center justify-center rounded-[var(--radius)] hover:bg-[var(--color-surface-elevated)] text-[var(--color-muted-foreground)] transition-colors"
+              aria-label="Zamknij"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <iframe
+            src={settingsUrl}
+            className="flex-1 w-full border-0"
+            title="Ustawienia pluginu"
+          />
+        </div>
+      )}
     </>
+  );
+}
+
+function PluginRow({
+  module: m,
+  isUpdating,
+  result,
+  onToggle,
+  onUpdate,
+  onSettings,
+}: {
+  module: ModuleItem;
+  isUpdating: boolean;
+  result: { ok: boolean; msg: string } | null;
+  onToggle: () => void;
+  onUpdate: () => void;
+  onSettings: () => void;
+}) {
+  return (
+    <div className="glass-card rounded-[var(--radius-lg)] p-5">
+      <div className="flex items-start gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h3 className="text-sm font-semibold text-[var(--color-foreground)]">{m.name}</h3>
+            <Badge variant="outline">v{m.version}</Badge>
+            {m.active && <Badge variant="success">aktywny</Badge>}
+            {m.updateAvailable && (
+              <Badge variant="warning">aktualizacja v{m.newVersion}</Badge>
+            )}
+          </div>
+          <p
+            className="text-xs text-[var(--color-muted-foreground)] line-clamp-2"
+            dangerouslySetInnerHTML={{ __html: m.description }}
+          />
+          <p className="text-[10px] text-[var(--color-subtle)] mt-1">{m.author}</p>
+
+          {result && (
+            <div className={`mt-2 flex items-center gap-1.5 text-xs ${result.ok ? 'text-[var(--color-success)]' : 'text-[var(--color-destructive)]'}`}>
+              {result.ok
+                ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                : <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              }
+              {result.msg}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {m.settingsUrl && (
+            <button
+              onClick={onSettings}
+              title="Ustawienia"
+              className="w-8 h-8 flex items-center justify-center rounded-[var(--radius)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-surface-elevated)] transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          )}
+          {m.updateAvailable && (
+            <button
+              onClick={onUpdate}
+              disabled={isUpdating}
+              title={`Zaktualizuj do v${m.newVersion}`}
+              className="w-8 h-8 flex items-center justify-center rounded-[var(--radius)] text-[var(--color-warning)] hover:bg-[color-mix(in_srgb,var(--color-warning)_15%,transparent)] transition-colors disabled:opacity-50"
+            >
+              {isUpdating
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <ArrowUpCircle className="w-4 h-4" />
+              }
+            </button>
+          )}
+          <Switch
+            checked={m.active}
+            onChange={onToggle}
+            aria-label={`Aktywuj ${m.name}`}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
