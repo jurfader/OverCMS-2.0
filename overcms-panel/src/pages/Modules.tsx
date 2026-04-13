@@ -5,6 +5,13 @@ import { Plus, Upload, CheckCircle2, AlertCircle, Loader2, Palette, RefreshCw, S
 import { api, ApiError } from '@/lib/api';
 import type { ModulesResponse, ModuleItem } from '@/lib/types';
 import { boot } from '@/lib/types';
+
+function setEmbedCookie() {
+  document.cookie = 'overcms_embed=1; path=/; SameSite=Lax';
+}
+function clearEmbedCookie() {
+  document.cookie = 'overcms_embed=; path=/; max-age=0; SameSite=Lax';
+}
 import { PageHeader } from '@/components/layout/Shell';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -257,10 +264,8 @@ export function ModulesPage() {
               onUpdate={() => updatePlugin.mutate({ id: m.id })}
               onSettings={() => {
                 if (m.settingsUrl) {
-                  // Append overcms_embed param to hide WP chrome
-                  const url = new URL(m.settingsUrl);
-                  url.searchParams.set('overcms_embed', '1');
-                  setSettingsUrl(url.toString());
+                  setEmbedCookie();
+                  setSettingsUrl(m.settingsUrl);
                 }
               }}
             />
@@ -276,7 +281,7 @@ export function ModulesPage() {
               {settingsUrl.split('?')[0].split('/').pop()}
             </span>
             <button
-              onClick={() => setSettingsUrl(null)}
+              onClick={() => { clearEmbedCookie(); setSettingsUrl(null); }}
               className="w-7 h-7 flex items-center justify-center rounded-[var(--radius)] hover:bg-[var(--color-surface-elevated)] text-[var(--color-muted-foreground)] transition-colors"
               aria-label="Zamknij"
             >

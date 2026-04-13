@@ -26,7 +26,10 @@ final class PanelLoader
      */
     public static function injectEmbedStyles(): void
     {
-        if (empty($_GET['overcms_embed'])) {
+        // Obsługujemy zarówno ?overcms_embed=1 w URL (pierwsze wejście)
+        // jak i ciasteczko overcms_embed (przeżywa wewnętrzne redirecty WooCommerce itp.)
+        $active = !empty($_GET['overcms_embed']) || !empty($_COOKIE['overcms_embed']);
+        if (!$active) {
             return;
         }
         echo '<style>

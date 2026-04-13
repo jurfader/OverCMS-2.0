@@ -1,5 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+
+function setEmbedCookie() {
+  document.cookie = 'overcms_embed=1; path=/; SameSite=Lax';
+}
+function clearEmbedCookie() {
+  document.cookie = 'overcms_embed=; path=/; max-age=0; SameSite=Lax';
+}
 import { Layers, AlertTriangle, Plus, X, LayoutTemplate, BookMarked, Sliders } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { TemplatesResponse, DiviTemplate } from '@/lib/types';
@@ -50,19 +57,19 @@ export function TemplatesPage() {
             iconClass="gradient-bg"
             title="Theme Builder"
             description="Globalne szablony stron — nagłówek, stopka, body"
-            onClick={() => setEmbedUrl(`${adminUrl}admin.php?page=et_theme_builder&overcms_embed=1`)}
+            onClick={() => { setEmbedCookie(); setEmbedUrl(`${adminUrl}admin.php?page=et_theme_builder`); }}
           />
           <DesignToolCard
             icon={<BookMarked className="w-4 h-4 text-[var(--color-primary)]" />}
             title="Biblioteka Divi"
             description="Zapisane sekcje, wiersze i layouty"
-            onClick={() => setEmbedUrl(`${adminUrl}admin.php?page=et_pb_layouts&overcms_embed=1`)}
+            onClick={() => { setEmbedCookie(); setEmbedUrl(`${adminUrl}admin.php?page=et_pb_layouts`); }}
           />
           <DesignToolCard
             icon={<Sliders className="w-4 h-4 text-[var(--color-primary)]" />}
             title="Customizer"
             description="Globalne style, kolory i czcionki motywu"
-            onClick={() => setEmbedUrl(`${adminUrl}customize.php`)}
+            onClick={() => { setEmbedCookie(); setEmbedUrl(`${adminUrl}customize.php`); }}
           />
         </div>
       </div>
@@ -119,7 +126,7 @@ export function TemplatesPage() {
           <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
             <span className="text-xs text-[var(--color-muted-foreground)]">{embedUrl.split('?')[0].split('/').pop()}</span>
             <button
-              onClick={() => setEmbedUrl(null)}
+              onClick={() => { clearEmbedCookie(); setEmbedUrl(null); }}
               className="w-7 h-7 flex items-center justify-center rounded-[var(--radius)] hover:bg-[var(--color-surface-elevated)] text-[var(--color-muted-foreground)] transition-colors"
               aria-label="Zamknij"
             >
