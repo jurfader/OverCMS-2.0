@@ -289,7 +289,7 @@ final class ModulesController
 
         $skin     = new \WP_Ajax_Upgrader_Skin();
         $upgrader = new \Plugin_Upgrader($skin);
-        $result   = $upgrader->install($tmpFile);
+        $result   = $upgrader->install($tmpFile, ['overwrite_package' => true]);
 
         // Sprzątamy plik tymczasowy
         @unlink($tmpFile);
