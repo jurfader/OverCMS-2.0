@@ -11,6 +11,7 @@ namespace OverCMS\Core\Rest;
  *   POST   /overcms/v1/modules/:id/deactivate     — dezaktywuj plugin
  *   POST   /overcms/v1/modules/:id/update         — zaktualizuj plugin
  *   POST   /overcms/v1/modules/check-updates      — wymuś sprawdzenie aktualizacji WP
+ *   POST   /overcms/v1/modules/install            — zainstaluj plugin z pliku ZIP
  */
 final class ModulesController
 {
@@ -28,6 +29,12 @@ final class ModulesController
         register_rest_route($ns, '/modules/check-updates', [
             'methods'             => \WP_REST_Server::CREATABLE,
             'callback'            => [self::class, 'checkUpdates'],
+            'permission_callback' => $perm,
+        ]);
+
+        register_rest_route($ns, '/modules/install', [
+            'methods'             => \WP_REST_Server::CREATABLE,
+            'callback'            => [self::class, 'install'],
             'permission_callback' => $perm,
         ]);
 
@@ -240,6 +247,80 @@ final class ModulesController
         }
 
         return new \WP_REST_Response(['success' => true]);
+    }
+
+    /**
+     * Instaluje plugin z przesłanego pliku ZIP.
+     * Używa Plugin_Upgrader::install() — identycznie jak WP robi to przez wp-admin.
+     */
+    public static function install(\WP_REST_Request $req): \WP_REST_Response
+    {
+        $files = $req->get_file_params();
+        if (empty($files['file']) || ($files['file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return new \WP_REST_Response(['error' => 'Brak pliku lub błąd przesyłania'], 400);
+        }
+
+        $file = $files['file'];
+
+        // Sprawdź typ MIME i rozszerzenie
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($ext !== 'zip') {
+            return new \WP_REST_Response(['error' => 'Akceptowane są tylko pliki .zip'], 400);
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/misc.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+        require_once ABSPATH . 'wp-admin/includes/class-plugin-upgrader.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader-skin.php';
+        require_once ABSPATH . 'wp-admin/includes/class-wp-ajax-upgrader-skin.php';
+
+        add_filter('filesystem_method', static fn () => 'direct');
+
+        if (!WP_Filesystem()) {
+            return new \WP_REST_Response(['error' => 'Cannot initialize WP_Filesystem'], 500);
+        }
+
+        // Przenieś plik do katalogu tymczasowego WP
+        $tmpFile = wp_tempnam($file['name']);
+        if (!move_uploaded_file($file['tmp_name'], $tmpFile)) {
+            return new \WP_REST_Response(['error' => 'Nie udało się zapisać pliku tymczasowego'], 500);
+        }
+
+        $skin     = new \WP_Ajax_Upgrader_Skin();
+        $upgrader = new \Plugin_Upgrader($skin);
+        $result   = $upgrader->install($tmpFile);
+
+        // Sprzątamy plik tymczasowy
+        @unlink($tmpFile);
+
+        if (is_wp_error($result)) {
+            return new \WP_REST_Response(['error' => $result->get_error_message()], 500);
+        }
+        if ($result === false) {
+            $errors = $skin->get_errors();
+            $msg    = (is_wp_error($errors) && $errors->has_errors())
+                ? $errors->get_error_message()
+                : 'Instalacja nie powiodła się';
+            return new \WP_REST_Response(['error' => $msg], 500);
+        }
+
+        // Pobierz nazwę zainstalowanego pluginu
+        $pluginInfo = $upgrader->plugin_info();
+        $name       = null;
+        if ($pluginInfo) {
+            if (!function_exists('get_plugins')) {
+                require_once ABSPATH . 'wp-admin/includes/plugin.php';
+            }
+            $all  = get_plugins();
+            $name = $all[$pluginInfo]['Name'] ?? null;
+        }
+
+        return new \WP_REST_Response([
+            'success' => true,
+            'plugin'  => $pluginInfo,
+            'name'    => $name,
+        ]);
     }
 
     /**

@@ -31,6 +31,7 @@ export function ModulesPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
+  const pluginFileRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [showThemes, setShowThemes] = useState(false);
@@ -97,6 +98,29 @@ export function ModulesPage() {
     },
   });
 
+  const installPlugin = useMutation({
+    mutationFn: (file: File) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      return api<{ success: boolean; plugin: string | null; name: string | null }>('overcms/v1/modules/install', {
+        method: 'POST',
+        body: fd,
+      });
+    },
+    onMutate: () => {
+      setUploadError(null);
+      setUploadSuccess(null);
+    },
+    onSuccess: (res) => {
+      setUploadSuccess(`Zainstalowano plugin: ${res.name ?? res.plugin ?? 'OK'}`);
+      qc.invalidateQueries({ queryKey: ['modules'] });
+      setTimeout(() => setUploadSuccess(null), 6000);
+    },
+    onError: (err) => {
+      setUploadError(err instanceof ApiError ? err.message : 'Błąd instalacji pluginu');
+    },
+  });
+
   const uploadTheme = useMutation({
     mutationFn: (file: File) => {
       const fd = new FormData();
@@ -140,14 +164,24 @@ export function ModulesPage() {
         actions={
           <div className="flex items-center gap-2">
             {!showThemes && (
-              <Button
-                variant="outline"
-                icon={checkUpdates.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-                onClick={() => checkUpdates.mutate()}
-                disabled={checkUpdates.isPending}
-              >
-                {checkUpdates.isPending ? 'Sprawdzam…' : 'Sprawdź aktualizacje'}
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  icon={installPlugin.isPending ? <Loader2 className="animate-spin" /> : <Upload />}
+                  onClick={() => pluginFileRef.current?.click()}
+                  disabled={installPlugin.isPending}
+                >
+                  {installPlugin.isPending ? 'Instaluję…' : 'Wgraj plugin (.zip)'}
+                </Button>
+                <Button
+                  variant="outline"
+                  icon={checkUpdates.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                  onClick={() => checkUpdates.mutate()}
+                  disabled={checkUpdates.isPending}
+                >
+                  {checkUpdates.isPending ? 'Sprawdzam…' : 'Sprawdź aktualizacje'}
+                </Button>
+              </>
             )}
             {showThemes && (
               <Button
@@ -174,6 +208,17 @@ export function ModulesPage() {
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) uploadTheme.mutate(f);
+          e.target.value = '';
+        }}
+      />
+      <input
+        ref={pluginFileRef}
+        type="file"
+        accept=".zip"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) installPlugin.mutate(f);
           e.target.value = '';
         }}
       />
