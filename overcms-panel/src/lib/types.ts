@@ -22,6 +22,7 @@ export interface OvercmsBoot {
     listUsers: boolean;
   };
   logoutUrl: string;
+  hasWooCommerce: boolean;
 }
 
 declare global {
@@ -46,7 +47,36 @@ export const boot: OvercmsBoot = window.OVERCMS_BOOT ?? {
     listUsers: true,
   },
   logoutUrl: '/login?action=logout',
+  hasWooCommerce: false,
 };
+
+// WooCommerce types
+export type WcOrderStatus = 'pending' | 'processing' | 'on-hold' | 'completed' | 'cancelled' | 'refunded' | 'failed';
+
+export interface WcOrder {
+  id: number;
+  number: string;
+  status: WcOrderStatus;
+  date_created: string;
+  total: string;
+  currency: string;
+  billing: { first_name: string; last_name: string; email: string };
+  line_items: { name: string; quantity: number; total: string }[];
+}
+
+export interface WcProduct {
+  id: number;
+  name: string;
+  status: string;
+  price: string;
+  regular_price: string;
+  sale_price: string;
+  stock_status: 'instock' | 'outofstock' | 'onbackorder';
+  stock_quantity: number | null;
+  permalink: string;
+  images: { src: string }[];
+  categories: { id: number; name: string }[];
+}
 
 export interface DashboardStats {
   pages: number;

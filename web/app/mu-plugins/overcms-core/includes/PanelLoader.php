@@ -213,7 +213,8 @@ final class PanelLoader
                 'uploadFiles'   => current_user_can('upload_files'),
                 'listUsers'     => current_user_can('list_users'),
             ],
-            'logoutUrl'  => wp_logout_url(home_url('/')),
+            'logoutUrl'       => wp_logout_url(home_url('/')),
+            'hasWooCommerce'  => is_plugin_active('woocommerce/woocommerce.php'),
         ]);
 
         // ESM type dla głównego skryptu

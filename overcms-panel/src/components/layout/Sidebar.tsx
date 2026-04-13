@@ -13,6 +13,7 @@ import {
   Settings,
   Puzzle,
   ShoppingBag,
+  ShoppingCart,
   Database,
   Shield,
   ChevronLeft,
@@ -34,7 +35,7 @@ interface NavSection {
   items: NavItem[];
 }
 
-const sections: NavSection[] = [
+const baseSections: NavSection[] = [
   {
     label: 'Główne',
     items: [
@@ -50,6 +51,7 @@ const sections: NavSection[] = [
       { label: 'Nawigacja', to: '/navigation', icon: Compass },
       { label: 'Szablony', to: '/templates', icon: Layers },
       { label: 'Blog', to: '/posts', icon: Newspaper },
+      ...(boot.hasWooCommerce ? [{ label: 'Sklep', to: '/shop', icon: ShoppingCart }] : []),
     ],
   },
   {
@@ -64,6 +66,8 @@ const sections: NavSection[] = [
     ],
   },
 ];
+
+const sections = baseSections;
 
 interface SidebarProps {
   collapsed: boolean;

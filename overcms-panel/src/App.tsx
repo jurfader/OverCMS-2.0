@@ -14,6 +14,7 @@ import { NavigationPage } from '@/pages/Navigation';
 import { BackupsPage } from '@/pages/Backups';
 import { SecurityPage } from '@/pages/Security';
 import { BlogPage } from '@/pages/Blog';
+import { ShopPage } from '@/pages/Shop';
 import { Placeholder } from '@/pages/Placeholder';
 
 const qc = new QueryClient({
@@ -31,6 +32,7 @@ export function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/pages" element={<PagesPage />} />
             <Route path="/posts" element={<BlogPage />} />
+            <Route path="/shop" element={<ShopPage />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/seo" element={<SeoPage />} />
             <Route path="/navigation" element={<NavigationPage />} />
