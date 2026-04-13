@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ShoppingCart, Package, TrendingUp, Clock, CheckCircle2,
   XCircle, AlertCircle, RefreshCw, ExternalLink, X,
-  Loader2, ChevronDown,
+  Loader2, ChevronDown, Plus, CreditCard, Truck, Receipt,
+  Mail, Settings2, Tag, BarChart3, Users,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { boot, type WcOrder, type WcOrderStatus, type WcProduct } from '@/lib/types';
@@ -46,15 +47,17 @@ function fmtPrice(amount: string, currency: string) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-type Tab = 'orders' | 'products';
+type Tab = 'orders' | 'products' | 'config';
 
 export function ShopPage() {
   const [tab, setTab]           = useState<Tab>('orders');
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [embedTitle, setEmbedTitle] = useState('WooCommerce');
   const adminUrl = boot.adminUrl.replace(/\/?$/, '/');
 
-  function openEmbed(url: string) {
+  function openEmbed(url: string, title = 'WooCommerce') {
     document.cookie = 'overcms_embed=1; path=/; SameSite=Lax';
+    setEmbedTitle(title);
     setEmbedUrl(url);
   }
   function closeEmbed() {
@@ -62,18 +65,24 @@ export function ShopPage() {
     setEmbedUrl(null);
   }
 
+  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: 'orders',   label: 'Zamówienia',  icon: <ShoppingCart className="w-3.5 h-3.5" /> },
+    { key: 'products', label: 'Produkty',    icon: <Package className="w-3.5 h-3.5" /> },
+    { key: 'config',   label: 'Konfiguracja', icon: <Settings2 className="w-3.5 h-3.5" /> },
+  ];
+
   return (
     <>
       <PageHeader
         title="Sklep"
-        description="Zamówienia i produkty WooCommerce."
+        description="Zamówienia, produkty i konfiguracja WooCommerce."
         actions={
           <Button
             variant="outline"
             icon={<ExternalLink className="w-3.5 h-3.5" />}
-            onClick={() => openEmbed(`${adminUrl}admin.php?page=wc-admin`)}
+            onClick={() => openEmbed(`${adminUrl}admin.php?page=wc-admin`, 'WooCommerce')}
           >
-            Otwórz WooCommerce
+            Panel WooCommerce
           </Button>
         }
       />
@@ -83,30 +92,31 @@ export function ShopPage() {
 
       {/* Tabs */}
       <div className="flex items-center gap-1 mb-4 border-b border-[var(--color-border)]">
-        {([['orders', 'Zamówienia', ShoppingCart], ['products', 'Produkty', Package]] as const).map(([key, label, Icon]) => (
+        {tabs.map((t) => (
           <button
-            key={key}
-            onClick={() => setTab(key)}
+            key={t.key}
+            onClick={() => setTab(t.key)}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-1.5 ${
-              tab === key
+              tab === t.key
                 ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
                 : 'border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]'
             }`}
           >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
+            {t.icon}
+            {t.label}
           </button>
         ))}
       </div>
 
-      {tab === 'orders'   && <OrdersTab onOpenOrder={(id) => openEmbed(`${adminUrl}post.php?post=${id}&action=edit`)} />}
-      {tab === 'products' && <ProductsTab onOpenProduct={(id) => openEmbed(`${adminUrl}post.php?post=${id}&action=edit`)} />}
+      {tab === 'orders'   && <OrdersTab   onOpenOrder={(id)   => openEmbed(`${adminUrl}post.php?post=${id}&action=edit`, 'Zamówienie')} />}
+      {tab === 'products' && <ProductsTab onOpenProduct={(id) => openEmbed(`${adminUrl}post.php?post=${id}&action=edit`, 'Produkt')} onAddProduct={() => openEmbed(`${adminUrl}post-new.php?post_type=product`, 'Nowy produkt')} />}
+      {tab === 'config'   && <ConfigTab   onOpen={openEmbed} adminUrl={adminUrl} />}
 
       {/* Iframe overlay */}
       {embedUrl && (
         <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-background)]">
           <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
-            <span className="text-xs text-[var(--color-muted-foreground)]">WooCommerce</span>
+            <span className="text-xs font-medium text-[var(--color-foreground)]">{embedTitle}</span>
             <button
               onClick={closeEmbed}
               className="w-7 h-7 flex items-center justify-center rounded-[var(--radius)] hover:bg-[var(--color-surface-elevated)] text-[var(--color-muted-foreground)] transition-colors"
@@ -115,7 +125,7 @@ export function ShopPage() {
               <X className="w-4 h-4" />
             </button>
           </div>
-          <iframe src={embedUrl} className="flex-1 w-full border-0" title="WooCommerce" />
+          <iframe src={embedUrl} className="flex-1 w-full border-0" title={embedTitle} />
         </div>
       )}
     </>
@@ -332,7 +342,7 @@ function OrderRow({ order, isChanging, onOpen, onStatusChange }: {
 
 // ─── Products tab ─────────────────────────────────────────────────────────────
 
-function ProductsTab({ onOpenProduct }: { onOpenProduct: (id: number) => void }) {
+function ProductsTab({ onOpenProduct, onAddProduct }: { onOpenProduct: (id: number) => void; onAddProduct: () => void }) {
   const { data: products, isLoading } = useQuery({
     queryKey: ['wc-products'],
     queryFn: () => api<WcProduct[]>('wc/v3/products', { query: { per_page: 50, status: 'any' } }),
@@ -340,6 +350,12 @@ function ProductsTab({ onOpenProduct }: { onOpenProduct: (id: number) => void })
 
   return (
     <div>
+      <div className="flex justify-end mb-3">
+        <Button icon={<Plus />} onClick={onAddProduct}>
+          Dodaj produkt
+        </Button>
+      </div>
+
       {isLoading && (
         <div className="flex items-center gap-2 justify-center py-12 text-sm text-[var(--color-muted-foreground)]">
           <Loader2 className="w-4 h-4 animate-spin" /> Ładowanie…
@@ -347,8 +363,10 @@ function ProductsTab({ onOpenProduct }: { onOpenProduct: (id: number) => void })
       )}
 
       {!isLoading && products?.length === 0 && (
-        <div className="glass-card rounded-[var(--radius-lg)] py-12 text-center text-sm text-[var(--color-muted-foreground)]">
-          Brak produktów
+        <div className="glass-card rounded-[var(--radius-lg)] py-12 text-center">
+          <Package className="w-10 h-10 text-[var(--color-subtle)] mx-auto mb-3" />
+          <p className="text-sm text-[var(--color-muted-foreground)] mb-4">Brak produktów w sklepie</p>
+          <Button icon={<Plus />} onClick={onAddProduct}>Dodaj pierwszy produkt</Button>
         </div>
       )}
 
@@ -412,6 +430,73 @@ function ProductsTab({ onOpenProduct }: { onOpenProduct: (id: number) => void })
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Config tab ───────────────────────────────────────────────────────────────
+
+function ConfigTab({ onOpen, adminUrl }: { onOpen: (url: string, title: string) => void; adminUrl: string }) {
+  const sections = [
+    {
+      label: 'Sklep',
+      items: [
+        { icon: <Settings2 className="w-4 h-4" />, title: 'Ogólne', desc: 'Waluta, lokalizacja, podatki', url: `${adminUrl}admin.php?page=wc-settings&tab=general` },
+        { icon: <CreditCard className="w-4 h-4" />, title: 'Płatności', desc: 'Metody płatności, bramki', url: `${adminUrl}admin.php?page=wc-settings&tab=checkout`, highlight: true },
+        { icon: <Truck className="w-4 h-4" />, title: 'Wysyłka', desc: 'Strefy, metody, koszty dostawy', url: `${adminUrl}admin.php?page=wc-settings&tab=shipping`, highlight: true },
+        { icon: <Receipt className="w-4 h-4" />, title: 'Podatki', desc: 'Stawki VAT, klasy podatkowe', url: `${adminUrl}admin.php?page=wc-settings&tab=tax` },
+        { icon: <Mail className="w-4 h-4" />, title: 'E-maile', desc: 'Szablony powiadomień', url: `${adminUrl}admin.php?page=wc-settings&tab=email` },
+      ],
+    },
+    {
+      label: 'Sprzedaż',
+      items: [
+        { icon: <Tag className="w-4 h-4" />, title: 'Kupony', desc: 'Kody rabatowe i promocje', url: `${adminUrl}edit.php?post_type=shop_coupon` },
+        { icon: <BarChart3 className="w-4 h-4" />, title: 'Raporty', desc: 'Sprzedaż, produkty, kategorie', url: `${adminUrl}admin.php?page=wc-reports` },
+        { icon: <Users className="w-4 h-4" />, title: 'Klienci', desc: 'Lista klientów i historia', url: `${adminUrl}admin.php?page=wc-admin&path=/customers` },
+      ],
+    },
+    {
+      label: 'Produkty',
+      items: [
+        { icon: <Package className="w-4 h-4" />, title: 'Kategorie produktów', desc: 'Drzewko kategorii', url: `${adminUrl}edit-tags.php?taxonomy=product_cat&post_type=product` },
+        { icon: <Tag className="w-4 h-4" />, title: 'Tagi produktów', desc: 'Etykiety i tagi', url: `${adminUrl}edit-tags.php?taxonomy=product_tag&post_type=product` },
+        { icon: <Settings2 className="w-4 h-4" />, title: 'Atrybuty', desc: 'Rozmiary, kolory, warianty', url: `${adminUrl}edit.php?post_type=product&page=product_attributes` },
+      ],
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {sections.map((section) => (
+        <div key={section.label}>
+          <p className="text-xs uppercase tracking-widest text-[var(--color-subtle)] mb-3">{section.label}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {section.items.map((item) => (
+              <button
+                key={item.title}
+                onClick={() => onOpen(item.url, item.title)}
+                className={`glass-card rounded-[var(--radius-lg)] p-4 flex items-start gap-3 text-left hover:bg-[var(--color-surface-elevated)] transition-colors group ${
+                  item.highlight ? 'ring-1 ring-[var(--color-primary)]/30' : ''
+                }`}
+              >
+                <span className={`w-9 h-9 rounded-[var(--radius)] flex items-center justify-center shrink-0 ${
+                  item.highlight
+                    ? 'gradient-bg text-white'
+                    : 'bg-[var(--color-surface-elevated)] text-[var(--color-primary)]'
+                }`}>
+                  {item.icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-[var(--color-foreground)]">{item.title}</p>
+                  <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">{item.desc}</p>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-[var(--color-subtle)] group-hover:text-[var(--color-primary)] transition-colors shrink-0 mt-0.5" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
