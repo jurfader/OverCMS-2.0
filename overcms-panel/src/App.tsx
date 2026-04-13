@@ -13,6 +13,7 @@ import { TemplatesPage } from '@/pages/Templates';
 import { NavigationPage } from '@/pages/Navigation';
 import { BackupsPage } from '@/pages/Backups';
 import { SecurityPage } from '@/pages/Security';
+import { BlogPage } from '@/pages/Blog';
 import { Placeholder } from '@/pages/Placeholder';
 
 const qc = new QueryClient({
@@ -29,7 +30,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/pages" element={<PagesPage />} />
-            <Route path="/posts" element={<Placeholder title="Treści" description="Wpisy bloga" />} />
+            <Route path="/posts" element={<BlogPage />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/seo" element={<SeoPage />} />
             <Route path="/navigation" element={<NavigationPage />} />

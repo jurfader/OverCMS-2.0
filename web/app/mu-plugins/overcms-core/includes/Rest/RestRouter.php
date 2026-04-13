@@ -18,6 +18,7 @@ final class RestRouter
             TemplatesController::register();
             NavigationController::register();
             BackupController::register();
+            BlogController::register();
             SecurityController::register();
             ThemesController::register();
         });

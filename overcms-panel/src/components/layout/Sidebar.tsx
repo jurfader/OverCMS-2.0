@@ -49,7 +49,7 @@ const sections: NavSection[] = [
       { label: 'SEO', to: '/seo', icon: Search },
       { label: 'Nawigacja', to: '/navigation', icon: Compass },
       { label: 'Szablony', to: '/templates', icon: Layers },
-      { label: 'Treści', to: '/posts', icon: Newspaper },
+      { label: 'Blog', to: '/posts', icon: Newspaper },
     ],
   },
   {

@@ -83,6 +83,25 @@ export interface WpPage {
   excerpt: { rendered: string };
 }
 
+export interface WpPost {
+  id: number;
+  date: string;
+  modified: string;
+  slug: string;
+  status: 'publish' | 'draft' | 'pending' | 'private' | 'future';
+  link: string;
+  title: { rendered: string };
+  excerpt: { rendered: string };
+  categories: number[];
+}
+
+export interface WpCategory {
+  id: number;
+  name: string;
+  slug: string;
+  count: number;
+}
+
 export interface MediaItem {
   id: number;
   title: string;
