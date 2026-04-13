@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { boot, type WcOrder, type WcOrderStatus, type WcProduct } from '@/lib/types';
+import { buildEmbedUrl, clearEmbedCookie } from '@/lib/embed';
 import { PageHeader } from '@/components/layout/Shell';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -56,12 +57,11 @@ export function ShopPage() {
   const adminUrl = boot.adminUrl.replace(/\/?$/, '/');
 
   function openEmbed(url: string, title = 'WooCommerce') {
-    document.cookie = 'overcms_embed=1; path=/; SameSite=Lax';
     setEmbedTitle(title);
-    setEmbedUrl(url);
+    setEmbedUrl(buildEmbedUrl(url));
   }
   function closeEmbed() {
-    document.cookie = 'overcms_embed=; path=/; max-age=0; SameSite=Lax';
+    clearEmbedCookie();
     setEmbedUrl(null);
   }
 

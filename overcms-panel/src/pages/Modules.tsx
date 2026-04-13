@@ -5,13 +5,7 @@ import { Plus, Upload, CheckCircle2, AlertCircle, Loader2, Palette, RefreshCw, S
 import { api, ApiError } from '@/lib/api';
 import type { ModulesResponse, ModuleItem } from '@/lib/types';
 import { boot } from '@/lib/types';
-
-function setEmbedCookie() {
-  document.cookie = 'overcms_embed=1; path=/; SameSite=Lax';
-}
-function clearEmbedCookie() {
-  document.cookie = 'overcms_embed=; path=/; max-age=0; SameSite=Lax';
-}
+import { buildEmbedUrl, clearEmbedCookie } from '@/lib/embed';
 import { PageHeader } from '@/components/layout/Shell';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -276,8 +270,7 @@ export function ModulesPage() {
               onUpdate={() => updatePlugin.mutate({ id: m.id })}
               onSettings={() => {
                 if (m.settingsUrl) {
-                  setEmbedCookie();
-                  setSettingsUrl(m.settingsUrl);
+                  setSettingsUrl(buildEmbedUrl(m.settingsUrl));
                 }
               }}
               onDelete={() => {

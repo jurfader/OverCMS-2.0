@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-
-function setEmbedCookie() {
-  document.cookie = 'overcms_embed=1; path=/; SameSite=Lax';
-}
-function clearEmbedCookie() {
-  document.cookie = 'overcms_embed=; path=/; max-age=0; SameSite=Lax';
-}
+import { buildEmbedUrl, clearEmbedCookie } from '@/lib/embed';
 import { Layers, AlertTriangle, Plus, X, LayoutTemplate, BookMarked, Sliders } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { TemplatesResponse, DiviTemplate } from '@/lib/types';
@@ -57,19 +51,19 @@ export function TemplatesPage() {
             iconClass="gradient-bg"
             title="Theme Builder"
             description="Globalne szablony stron — nagłówek, stopka, body"
-            onClick={() => { setEmbedCookie(); setEmbedUrl(`${adminUrl}admin.php?page=et_theme_builder`); }}
+            onClick={() => setEmbedUrl(buildEmbedUrl(`${adminUrl}admin.php?page=et_theme_builder`))}
           />
           <DesignToolCard
             icon={<BookMarked className="w-4 h-4 text-[var(--color-primary)]" />}
             title="Biblioteka Divi"
             description="Zapisane sekcje, wiersze i layouty"
-            onClick={() => { setEmbedCookie(); setEmbedUrl(`${adminUrl}admin.php?page=et_pb_layouts`); }}
+            onClick={() => setEmbedUrl(buildEmbedUrl(`${adminUrl}admin.php?page=et_pb_layouts`))}
           />
           <DesignToolCard
             icon={<Sliders className="w-4 h-4 text-[var(--color-primary)]" />}
             title="Customizer"
             description="Globalne style, kolory i czcionki motywu"
-            onClick={() => { setEmbedCookie(); setEmbedUrl(`${adminUrl}customize.php`); }}
+            onClick={() => setEmbedUrl(buildEmbedUrl(`${adminUrl}customize.php`))}
           />
         </div>
       </div>

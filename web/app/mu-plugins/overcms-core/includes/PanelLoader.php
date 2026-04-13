@@ -41,6 +41,13 @@ final class PanelLoader
             #wpcontent { margin-left: 0 !important; padding-top: 0 !important; }
             #wpbody { padding-top: 0 !important; }
             #wpbody-content { padding-bottom: 0 !important; }
+            /* WooCommerce React admin chrome */
+            .woocommerce-layout__header,
+            .woocommerce-layout__activity-panel,
+            .woocommerce-layout__notice-list,
+            .components-notice-list { display: none !important; }
+            .woocommerce-layout__main { padding-top: 0 !important; margin-top: 0 !important; }
+            .woocommerce-layout { padding-top: 0 !important; }
         </style>';
     }
 
