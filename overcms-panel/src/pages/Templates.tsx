@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Layers, AlertTriangle, Plus, ExternalLink } from 'lucide-react';
+import { Layers, AlertTriangle, Plus, ExternalLink, LayoutTemplate, BookMarked, Sliders } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { TemplatesResponse, DiviTemplate } from '@/lib/types';
+import { boot } from '@/lib/types';
 import { PageHeader } from '@/components/layout/Shell';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -30,12 +31,83 @@ export function TemplatesPage() {
     },
   });
 
+  const adminUrl = boot.adminUrl.replace(/\/?$/, '/');
+
   return (
     <>
       <PageHeader
         title="Szablony"
-        description="Galeria layoutów Divi — utwórz nową stronę z wybranego szablonu jednym klikiem."
+        description="Narzędzia projektowe Divi i biblioteka layoutów."
       />
+
+      {/* Narzędzia projektowe Divi */}
+      <div className="mb-6">
+        <p className="text-xs uppercase tracking-widest text-[var(--color-subtle)] mb-3">Narzędzia projektowe</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <a
+            href={`${adminUrl}admin.php?page=et_theme_builder`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass-card rounded-[var(--radius-lg)] p-4 flex items-start gap-3 hover:bg-[var(--color-surface-elevated)] transition-colors group"
+          >
+            <span className="w-9 h-9 rounded-[var(--radius)] gradient-bg flex items-center justify-center shrink-0">
+              <LayoutTemplate className="w-4 h-4 text-white" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-semibold text-[var(--color-foreground)]">Theme Builder</p>
+                <ExternalLink className="w-3 h-3 text-[var(--color-subtle)] group-hover:text-[var(--color-primary)] transition-colors" />
+              </div>
+              <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
+                Globalne szablony stron — nagłówek, stopka, body
+              </p>
+            </div>
+          </a>
+
+          <a
+            href={`${adminUrl}admin.php?page=et_pb_layouts`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass-card rounded-[var(--radius-lg)] p-4 flex items-start gap-3 hover:bg-[var(--color-surface-elevated)] transition-colors group"
+          >
+            <span className="w-9 h-9 rounded-[var(--radius)] bg-[var(--color-surface-elevated)] flex items-center justify-center shrink-0">
+              <BookMarked className="w-4 h-4 text-[var(--color-primary)]" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-semibold text-[var(--color-foreground)]">Biblioteka Divi</p>
+                <ExternalLink className="w-3 h-3 text-[var(--color-subtle)] group-hover:text-[var(--color-primary)] transition-colors" />
+              </div>
+              <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
+                Zapisane sekcje, wiersze i layouty
+              </p>
+            </div>
+          </a>
+
+          <a
+            href={`${adminUrl}customize.php`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass-card rounded-[var(--radius-lg)] p-4 flex items-start gap-3 hover:bg-[var(--color-surface-elevated)] transition-colors group"
+          >
+            <span className="w-9 h-9 rounded-[var(--radius)] bg-[var(--color-surface-elevated)] flex items-center justify-center shrink-0">
+              <Sliders className="w-4 h-4 text-[var(--color-primary)]" />
+            </span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-semibold text-[var(--color-foreground)]">Customizer</p>
+                <ExternalLink className="w-3 h-3 text-[var(--color-subtle)] group-hover:text-[var(--color-primary)] transition-colors" />
+              </div>
+              <p className="text-[11px] text-[var(--color-muted-foreground)] mt-0.5">
+                Globalne style, kolory i czcionki motywu
+              </p>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      {/* Biblioteka layoutów */}
+      <p className="text-xs uppercase tracking-widest text-[var(--color-subtle)] mb-3">Biblioteka layoutów</p>
 
       {isLoading && <p className="text-sm text-[var(--color-muted-foreground)]">Ładowanie…</p>}
 
