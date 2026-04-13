@@ -83,7 +83,7 @@ final class ModulesController
             $newVersion = $hasUpdate ? ($updates->response[$file]->new_version ?? null) : null;
 
             $modules[] = [
-                'id'              => rawurlencode($file),
+                'id'              => self::encodeId($file),
                 'file'            => $file,
                 'name'            => $data['Name'],
                 'description'     => $data['Description'],
@@ -138,7 +138,7 @@ final class ModulesController
 
     public static function activate(\WP_REST_Request $req): \WP_REST_Response
     {
-        $file = rawurldecode((string) $req['id']);
+        $file = self::decodeId((string) $req['id']);
         if (!function_exists('activate_plugin')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
@@ -151,7 +151,7 @@ final class ModulesController
 
     public static function deactivate(\WP_REST_Request $req): \WP_REST_Response
     {
-        $file = rawurldecode((string) $req['id']);
+        $file = self::decodeId((string) $req['id']);
         if (!function_exists('deactivate_plugins')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
@@ -161,7 +161,7 @@ final class ModulesController
 
     public static function update(\WP_REST_Request $req): \WP_REST_Response
     {
-        $file = rawurldecode((string) $req['id']);
+        $file = self::decodeId((string) $req['id']);
 
         if (!function_exists('get_plugins')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -212,7 +212,7 @@ final class ModulesController
 
     public static function delete(\WP_REST_Request $req): \WP_REST_Response
     {
-        $file = rawurldecode((string) $req['id']);
+        $file = self::decodeId((string) $req['id']);
 
         if (!function_exists('get_plugins')) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -321,6 +321,21 @@ final class ModulesController
             'plugin'  => $pluginInfo,
             'name'    => $name,
         ]);
+    }
+
+    /**
+     * Koduje ścieżkę pluginu (np. "plugin/plugin.php") jako base64url
+     * bez znaków "/" i "+" — bezpieczne do użycia w URL path bez konfliktu z separatorem /.
+     */
+    private static function encodeId(string $file): string
+    {
+        return rtrim(strtr(base64_encode($file), '+/', '-_'), '=');
+    }
+
+    private static function decodeId(string $id): string
+    {
+        $padded = $id . str_repeat('=', (4 - strlen($id) % 4) % 4);
+        return (string) base64_decode(strtr($padded, '-_', '+/'));
     }
 
     /**
