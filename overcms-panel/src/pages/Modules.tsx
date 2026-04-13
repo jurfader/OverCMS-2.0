@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Upload, CheckCircle2, AlertCircle, Loader2, Palette, RefreshCw, Settings, ArrowUpCircle, X } from 'lucide-react';
+import { Plus, Upload, CheckCircle2, AlertCircle, Loader2, Palette, RefreshCw, Settings, ArrowUpCircle, X, Trash2 } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import type { ModulesResponse, ModuleItem } from '@/lib/types';
 import { boot } from '@/lib/types';
@@ -66,6 +66,18 @@ export function ModulesPage() {
       { method: 'POST' }
     ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['modules'] }),
+  });
+
+  const deletePlugin = useMutation({
+    mutationFn: ({ id }: { id: string }) =>
+      api(`overcms/v1/modules/${id}`, { method: 'DELETE' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['modules'] }),
+    onError: (err) => {
+      setUpdateResults(prev => ({
+        ...prev,
+        [`del-${Date.now()}`]: { ok: false, msg: err instanceof ApiError ? err.message : 'Błąd usuwania' },
+      }));
+    },
   });
 
   const updatePlugin = useMutation({
@@ -268,6 +280,11 @@ export function ModulesPage() {
                   setSettingsUrl(m.settingsUrl);
                 }
               }}
+              onDelete={() => {
+                if (confirm(`Usunąć plugin „${m.name}"?\n\nTej operacji nie można cofnąć.`)) {
+                  deletePlugin.mutate({ id: m.id });
+                }
+              }}
             />
           ))}
         </div>
@@ -306,6 +323,7 @@ function PluginRow({
   onToggle,
   onUpdate,
   onSettings,
+  onDelete,
 }: {
   module: ModuleItem;
   isUpdating: boolean;
@@ -313,6 +331,7 @@ function PluginRow({
   onToggle: () => void;
   onUpdate: () => void;
   onSettings: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div className="glass-card rounded-[var(--radius-lg)] p-5">
@@ -366,6 +385,13 @@ function PluginRow({
               }
             </button>
           )}
+          <button
+            onClick={onDelete}
+            title="Usuń plugin"
+            className="w-8 h-8 flex items-center justify-center rounded-[var(--radius)] text-[var(--color-muted-foreground)] hover:text-[var(--color-destructive)] hover:bg-[color-mix(in_srgb,var(--color-destructive)_10%,transparent)] transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
           <Switch
             checked={m.active}
             onChange={onToggle}

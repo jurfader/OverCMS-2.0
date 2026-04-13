@@ -48,6 +48,12 @@ final class ModulesController
             'callback'            => [self::class, 'update'],
             'permission_callback' => $perm,
         ]);
+
+        register_rest_route($ns, '/modules/(?P<id>[^/]+)', [
+            'methods'             => \WP_REST_Server::DELETABLE,
+            'callback'            => [self::class, 'delete'],
+            'permission_callback' => $perm,
+        ]);
     }
 
     public static function index(): \WP_REST_Response
@@ -195,6 +201,45 @@ final class ModulesController
             'success'    => true,
             'newVersion' => $newVersion,
         ]);
+    }
+
+    public static function delete(\WP_REST_Request $req): \WP_REST_Response
+    {
+        $file = rawurldecode((string) $req['id']);
+
+        if (!function_exists('get_plugins')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        if (!function_exists('delete_plugins')) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
+        if (!function_exists('WP_Filesystem')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        $all = get_plugins();
+        if (!isset($all[$file])) {
+            return new \WP_REST_Response(['error' => 'Plugin nie istnieje: ' . $file], 404);
+        }
+
+        // Dezaktywuj jeśli aktywny
+        if (is_plugin_active($file)) {
+            deactivate_plugins([$file]);
+        }
+
+        add_filter('filesystem_method', static fn () => 'direct');
+        WP_Filesystem();
+
+        $result = delete_plugins([$file]);
+
+        if (is_wp_error($result)) {
+            return new \WP_REST_Response(['error' => $result->get_error_message()], 500);
+        }
+        if ($result === false) {
+            return new \WP_REST_Response(['error' => 'Usunięcie nie powiodło się'], 500);
+        }
+
+        return new \WP_REST_Response(['success' => true]);
     }
 
     /**
