@@ -31,6 +31,12 @@ final class BackupController
             'permission_callback' => $perm,
         ]);
 
+        register_rest_route($ns, '/backups/(?P<filename>[A-Za-z0-9_.-]+)/restore', [
+            'methods'             => \WP_REST_Server::CREATABLE,
+            'callback'            => [self::class, 'restore'],
+            'permission_callback' => $perm,
+        ]);
+
         register_rest_route($ns, '/backups/(?P<filename>[A-Za-z0-9_.-]+)', [
             'methods'             => \WP_REST_Server::DELETABLE,
             'callback'            => [self::class, 'delete'],
@@ -107,16 +113,25 @@ final class BackupController
             return new \WP_REST_Response(['error' => implode('; ', $errors)], 500);
         }
 
-        // 2. Spakuj sql + uploads do tar.gz
-        $archive = $dir . '/backup-' . $timestamp . '.tar.gz';
-        $uploads = WP_CONTENT_DIR . '/uploads';
+        // 2. Spakuj sql + uploads + themes + plugins do tar.gz
+        $archive    = $dir . '/backup-' . $timestamp . '.tar.gz';
+        $contentDir = WP_CONTENT_DIR;
 
-        // tar -czf archive.tar.gz -C tmpDir database.sql -C wp-content uploads
+        // Zbierz istniejące foldery do spakowania
+        $folders = [];
+        foreach (['uploads', 'themes', 'plugins'] as $f) {
+            if (is_dir($contentDir . '/' . $f)) {
+                $folders[] = $f;
+            }
+        }
+
+        // tar -czf archive.tar.gz -C tmpDir database.sql -C wp-content uploads themes plugins
         $tarCmd = sprintf(
-            'tar -czf %s -C %s database.sql -C %s uploads 2>&1',
+            'tar -czf %s -C %s database.sql -C %s %s 2>&1',
             escapeshellarg($archive),
             escapeshellarg($tmpDir),
-            escapeshellarg(WP_CONTENT_DIR)
+            escapeshellarg($contentDir),
+            implode(' ', array_map('escapeshellarg', $folders))
         );
         exec($tarCmd, $tarOut, $tarCode);
         self::rrmdir($tmpDir);
@@ -152,6 +167,69 @@ final class BackupController
         header('Content-Length: ' . filesize($path));
         readfile($path);
         exit;
+    }
+
+    public static function restore(\WP_REST_Request $req): \WP_REST_Response
+    {
+        @set_time_limit(300);
+        @ignore_user_abort(true);
+
+        $filename = basename((string) $req['filename']);
+        if (!preg_match('/\.tar\.gz$/', $filename)) {
+            return new \WP_REST_Response(['error' => 'Invalid filename'], 400);
+        }
+        $path = self::siteDir() . '/' . $filename;
+        if (!file_exists($path)) {
+            return new \WP_REST_Response(['error' => 'Backup nie istnieje'], 404);
+        }
+
+        $tmpDir = '/tmp/overcms-restore-' . wp_generate_password(8, false);
+        if (!mkdir($tmpDir, 0700, true)) {
+            return new \WP_REST_Response(['error' => 'Cannot create temp dir'], 500);
+        }
+
+        // Wypakuj archiwum
+        $extractCmd = sprintf('tar -xzf %s -C %s 2>&1', escapeshellarg($path), escapeshellarg($tmpDir));
+        exec($extractCmd, $extOut, $extCode);
+        if ($extCode !== 0) {
+            self::rrmdir($tmpDir);
+            return new \WP_REST_Response(['error' => 'tar extract failed: ' . implode("\n", $extOut)], 500);
+        }
+
+        // 1. Przywróć bazę danych
+        $sqlFile = $tmpDir . '/database.sql';
+        if (file_exists($sqlFile)) {
+            $restoreCmd = sprintf(
+                'mysql --no-tablespaces -h %s -u %s -p%s %s < %s 2>&1',
+                escapeshellarg(DB_HOST),
+                escapeshellarg(DB_USER),
+                escapeshellarg(DB_PASSWORD),
+                escapeshellarg(DB_NAME),
+                escapeshellarg($sqlFile)
+            );
+            exec($restoreCmd, $dbOut, $dbCode);
+            if ($dbCode !== 0) {
+                self::rrmdir($tmpDir);
+                return new \WP_REST_Response(['error' => 'mysql restore failed: ' . implode("\n", $dbOut)], 500);
+            }
+        }
+
+        // 2. Przywróć pliki (uploads, themes, plugins)
+        $contentDir = WP_CONTENT_DIR;
+        foreach (['uploads', 'themes', 'plugins'] as $folder) {
+            $src = $tmpDir . '/' . $folder;
+            if (!is_dir($src)) {
+                continue;
+            }
+            $dst = $contentDir . '/' . $folder;
+            // rsync-like: kopiuj zawartość src do dst
+            $cpCmd = sprintf('cp -a %s/. %s/ 2>&1', escapeshellarg($src), escapeshellarg($dst));
+            exec($cpCmd, $cpOut, $cpCode);
+        }
+
+        self::rrmdir($tmpDir);
+
+        return new \WP_REST_Response(['success' => true]);
     }
 
     public static function delete(\WP_REST_Request $req): \WP_REST_Response
