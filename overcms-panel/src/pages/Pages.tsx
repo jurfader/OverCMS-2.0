@@ -38,12 +38,11 @@ export function PagesPage() {
   });
 
   const editInDivi = (page: WpPage) => {
-    // Preferuj pretty permalink (page.link), fallback do ?p=ID dla nowo utworzonych
-    // stron które jeszcze nie mają permalinka. Divi w nowych wersjach lepiej
-    // rozpoznaje permalink niż URL z query string ?p=ID.
-    const baseUrl = page.link && !page.link.endsWith('=') ? page.link : `${boot.siteUrl}?p=${page.id}`;
-    const sep = baseUrl.includes('?') ? '&' : '?';
-    window.open(`${baseUrl}${sep}et_fb=1&PageSpeed=off`, '_blank');
+    // Server-side launcher: /?overcms_launch_vb=1&post=ID
+    // Handler weryfikuje sesje + uprawnienia i robi redirect do VB URL.
+    // User nie widzi WP admin chrome — bezpośredni skok do frontendu z et_fb=1.
+    const url = `${boot.siteUrl}?overcms_launch_vb=1&post=${page.id}`;
+    window.open(url, '_blank', 'noopener');
   };
 
   return (

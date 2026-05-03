@@ -53,9 +53,8 @@ export function BlogPage() {
   });
 
   const editInDivi = (post: WpPost) => {
-    const baseUrl = post.link && !post.link.endsWith('=') ? post.link : `${boot.siteUrl}?p=${post.id}`;
-    const sep = baseUrl.includes('?') ? '&' : '?';
-    window.open(`${baseUrl}${sep}et_fb=1&PageSpeed=off`, '_blank');
+    const url = `${boot.siteUrl}?overcms_launch_vb=1&post=${post.id}`;
+    window.open(url, '_blank', 'noopener');
   };
 
   const catMap = Object.fromEntries((categories ?? []).map((c) => [c.id, c.name]));
