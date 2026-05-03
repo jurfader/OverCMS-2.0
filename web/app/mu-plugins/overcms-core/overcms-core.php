@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('OVERCMS_VERSION', '1.1.27');
+define('OVERCMS_VERSION', '1.1.28');
 define('OVERCMS_DIR', __DIR__);
 define('OVERCMS_URL', plugins_url('', __FILE__));
 define('OVERCMS_PANEL_DIST', __DIR__ . '/panel/dist');
@@ -57,7 +57,6 @@ add_action('plugins_loaded', static function (): void {
     \OverCMS\Core\PanelLoader::register();
     \OverCMS\Core\Redirects::register();
     \OverCMS\Core\Updater::register();
-    \OverCMS\Core\DiviCompatibility::register();
     \OverCMS\Core\VbLauncher::register();
     \OverCMS\Core\Rest\RestRouter::register();
 }, 5);
