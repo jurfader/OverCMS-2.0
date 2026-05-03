@@ -51,7 +51,14 @@ export function TemplatesPage() {
             iconClass="gradient-bg"
             title="Theme Builder"
             description="Globalne szablony stron — nagłówek, stopka, body"
-            onClick={() => setEmbedUrl(buildEmbedUrl(`${adminUrl}admin.php?page=et_theme_builder`))}
+            onClick={() => {
+              // Theme Builder uruchamia VB layoutow przez NAWIGACJE iframe
+              // (a nie tworzenie nowego iframe), wiec iframe interceptor nie
+              // lapie tego. Otwieramy TB w nowej karcie zeby uniknac iframe
+              // nestingu — VB layoutu zaladuje sie w tej samej karcie full-screen.
+              document.cookie = 'overcms_embed=1; path=/; SameSite=Lax';
+              window.open(`${adminUrl}admin.php?page=et_theme_builder&overcms_embed=1`, '_blank', 'noopener');
+            }}
           />
           <DesignToolCard
             icon={<BookMarked className="w-4 h-4 text-[var(--color-primary)]" />}
