@@ -164,6 +164,9 @@ export interface SiteSettings {
   theme: Theme;
   wpVersion: string;
   phpVersion: string;
+  homepageId: number;
+  postsPageId: number;
+  pages: { id: number; title: string }[];
 }
 
 export interface ModuleItem {

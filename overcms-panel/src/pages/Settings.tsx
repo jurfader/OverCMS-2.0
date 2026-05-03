@@ -78,6 +78,41 @@ export function SettingsPage() {
         </Card>
 
         <Card>
+          <CardHeader
+            title="Strona główna"
+            description="Wybierz statyczną stronę jako główną witryny lub pokazuj najnowsze posty."
+          />
+          <div className="space-y-3">
+            <Field label="Strona główna">
+              <select
+                value={form.homepageId ?? 0}
+                onChange={(e) => setForm({ ...form, homepageId: Number(e.target.value) })}
+                className="w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+              >
+                <option value={0}>Najnowsze posty (blog)</option>
+                {data.pages?.map((p) => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+              </select>
+            </Field>
+            {(form.homepageId ?? 0) > 0 && (
+              <Field label="Strona z postami (blog)">
+                <select
+                  value={form.postsPageId ?? 0}
+                  onChange={(e) => setForm({ ...form, postsPageId: Number(e.target.value) })}
+                  className="w-full rounded-[var(--radius)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                >
+                  <option value={0}>Brak (posty wyświetlane na osobnej stronie)</option>
+                  {data.pages?.filter(p => p.id !== (form.homepageId ?? 0)).map((p) => (
+                    <option key={p.id} value={p.id}>{p.title}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
+          </div>
+        </Card>
+
+        <Card>
           <CardHeader title="Lokalizacja" />
           <div className="grid grid-cols-2 gap-3">
             <Field label="Język">

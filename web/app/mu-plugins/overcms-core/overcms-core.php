@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('OVERCMS_VERSION', '1.1.28');
+define('OVERCMS_VERSION', '1.1.29');
 define('OVERCMS_DIR', __DIR__);
 define('OVERCMS_URL', plugins_url('', __FILE__));
 define('OVERCMS_PANEL_DIST', __DIR__ . '/panel/dist');
