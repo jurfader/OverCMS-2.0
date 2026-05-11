@@ -44,11 +44,12 @@ final class LoginCustomization
         if (!empty($message)) {
             return $message;
         }
-        return '<p class="overcms-tagline">Panel OverCMS · Zaloguj się aby zarządzać witryną</p>';
+        return '<p class="overcms-tagline">Profesjonalny CMS od OverMedia · Zaloguj się aby zarządzać witryną</p>';
     }
 
     public static function enqueueStyles(): void
     {
+        $logoUrl = OVERCMS_URL . '/assets/overmedia-full.png';
         // Inline styles — bez dodatkowego requestu
         ?>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -82,18 +83,19 @@ final class LoginCustomization
             /* Logo */
             body.login #login h1 a {
                 background: none;
-                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='64' y2='64' gradientUnits='userSpaceOnUse'><stop offset='0' stop-color='%23E91E8C'/><stop offset='1' stop-color='%239333EA'/></linearGradient></defs><rect x='6' y='6' width='52' height='52' rx='12' fill='url(%23g)'/><path d='M20 32l8 8 16-16' stroke='white' stroke-width='5' stroke-linecap='round' stroke-linejoin='round' fill='none'/></svg>") !important;
+                background-image: url("<?php echo esc_url($logoUrl); ?>") !important;
                 background-repeat: no-repeat;
                 background-size: contain;
                 background-position: center;
-                width: 64px;
-                height: 64px;
-                margin: 0 auto 24px;
-                filter: drop-shadow(0 0 24px rgba(233, 30, 140, 0.4));
+                width: 280px;
+                height: 100px;
+                margin: 0 auto 20px;
+                filter: drop-shadow(0 0 24px rgba(233, 30, 140, 0.35));
                 transition: filter 0.3s ease;
+                text-indent: -9999px;
             }
             body.login #login h1 a:hover {
-                filter: drop-shadow(0 0 32px rgba(233, 30, 140, 0.6));
+                filter: drop-shadow(0 0 32px rgba(233, 30, 140, 0.55));
             }
 
             /* Glass card */

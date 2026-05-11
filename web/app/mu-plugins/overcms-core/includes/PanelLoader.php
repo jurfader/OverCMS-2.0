@@ -223,6 +223,7 @@ final class PanelLoader
             'logoutUrl'       => wp_logout_url(home_url('/')),
             'hasWooCommerce'  => is_plugin_active('woocommerce/woocommerce.php'),
             'pluginPages'     => apply_filters('overcms_plugin_pages', []),
+            'overmediaIconUrl' => OVERCMS_URL . '/assets/overmedia-icon.png',
         ]);
 
         // ESM type dla głównego skryptu

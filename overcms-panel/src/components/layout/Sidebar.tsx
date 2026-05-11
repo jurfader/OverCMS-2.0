@@ -91,15 +91,23 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
         <AnimatePresence>
           {!collapsed && (
-            <motion.span
+            <motion.div
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.2 }}
-              className="gradient-text text-lg font-bold tracking-tight"
+              className="flex items-center gap-2 min-w-0"
             >
-              OverCMS
-            </motion.span>
+              <span className="gradient-text text-lg font-bold tracking-tight">OverCMS</span>
+              {boot.overmediaIconUrl && (
+                <img
+                  src={boot.overmediaIconUrl}
+                  alt="OverMedia"
+                  className="w-7 h-7 shrink-0 object-contain drop-shadow"
+                  title="OverMedia"
+                />
+              )}
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
