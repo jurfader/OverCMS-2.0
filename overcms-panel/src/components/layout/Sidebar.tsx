@@ -86,28 +86,29 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     >
       {/* Logo */}
       <div className="h-[60px] flex items-center gap-2.5 px-4 border-b border-[var(--color-border)] shrink-0">
-        <div className="w-8 h-8 rounded-[var(--radius)] gradient-bg glow-pink flex items-center justify-center shrink-0">
-          <Sparkles className="w-4 h-4 text-white" />
-        </div>
+        {boot.overmediaIconUrl ? (
+          <img
+            src={boot.overmediaIconUrl}
+            alt="OverMedia"
+            className="w-8 h-8 shrink-0 object-contain drop-shadow"
+            title="OverMedia"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-[var(--radius)] gradient-bg glow-pink flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4 text-white" />
+          </div>
+        )}
         <AnimatePresence>
           {!collapsed && (
-            <motion.div
+            <motion.span
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.2 }}
-              className="flex items-center gap-2 min-w-0"
+              className="gradient-text text-lg font-bold tracking-tight"
             >
-              <span className="gradient-text text-lg font-bold tracking-tight">OverCMS</span>
-              {boot.overmediaIconUrl && (
-                <img
-                  src={boot.overmediaIconUrl}
-                  alt="OverMedia"
-                  className="w-7 h-7 shrink-0 object-contain drop-shadow"
-                  title="OverMedia"
-                />
-              )}
-            </motion.div>
+              OverCMS
+            </motion.span>
           )}
         </AnimatePresence>
       </div>
