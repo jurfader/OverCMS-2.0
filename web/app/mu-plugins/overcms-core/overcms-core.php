@@ -14,9 +14,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('OVERCMS_VERSION', '1.1.30');
+define('OVERCMS_VERSION', '1.1.31');
 define('OVERCMS_DIR', __DIR__);
-define('OVERCMS_URL', plugins_url('', __FILE__));
+// Używamy WPMU_PLUGIN_URL bezpośrednio (deterministyczne), bo plugins_url(__FILE__)
+// w Bedrock z symlinkami potrafi realpath'ować ścieżkę i nie rozpoznać jej jako
+// mu-plugin → fallback do /app/plugins/overcms-core (który nie istnieje) → 404 na assetach.
+define('OVERCMS_URL', WPMU_PLUGIN_URL . '/overcms-core');
 define('OVERCMS_PANEL_DIST', __DIR__ . '/panel/dist');
 define('OVERCMS_PANEL_DIST_URL', OVERCMS_URL . '/panel/dist');
 define('OVERCMS_GITHUB_REPO', 'jurfader/OverCMS-2.0');

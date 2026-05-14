@@ -110,13 +110,15 @@ Config::define('WP_SITEURL', env('WP_SITEURL'));
  *      pasuje do /admin/ → browser go nie wysyła → WordPress widzi gościa
  *      → redirect do /login?reauth=1 → pętla.
  *
- * Fix: COOKIEPATH=/ (logged_in cookie globalnie) + ADMIN_COOKIE_PATH=/admin
- * (auth cookie pasujący do zamaskowanego pathu).
+ * Fix: wszystkie cookies wysyłane z path=/ — auth cookie musi być dostępny
+ * zarówno na zamaskowanym /admin/* jak i na rzeczywistym /wp/wp-admin/*
+ * (Divi VB i wiele innych pluginów strzela AJAX-em wprost do /wp/wp-admin/admin-ajax.php).
+ * Bez tego cookie z path=/admin NIE jest wysyłane do /wp/wp-admin/ → user "nie zalogowany".
  */
 Config::define('COOKIE_DOMAIN', '');
 Config::define('COOKIEPATH', '/');
 Config::define('SITECOOKIEPATH', '/');
-Config::define('ADMIN_COOKIE_PATH', '/admin');
+Config::define('ADMIN_COOKIE_PATH', '/');
 
 /**
  * Custom Content Directory
