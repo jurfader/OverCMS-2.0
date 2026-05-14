@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('OVERCMS_VERSION', '1.1.31');
+define('OVERCMS_VERSION', '1.1.32');
 define('OVERCMS_DIR', __DIR__);
 // Używamy WPMU_PLUGIN_URL bezpośrednio (deterministyczne), bo plugins_url(__FILE__)
 // w Bedrock z symlinkami potrafi realpath'ować ścieżkę i nie rozpoznać jej jako
