@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Upload, CheckCircle2, AlertCircle, Loader2, Palette, RefreshCw, Settings, ArrowUpCircle, X, Trash2 } from 'lucide-react';
+import { Plus, Upload, CheckCircle2, AlertCircle, Loader2, Palette, RefreshCw, Settings, ArrowUpCircle, X, Trash2, ExternalLink } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
 import type { ModulesResponse, ModuleItem } from '@/lib/types';
 import { boot } from '@/lib/types';
@@ -331,17 +331,30 @@ export function ModulesPage() {
       {/* Settings iframe overlay */}
       {settingsUrl && (
         <div className="fixed inset-0 z-50 flex flex-col bg-[var(--color-background)]">
-          <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] shrink-0">
-            <span className="text-xs text-[var(--color-muted-foreground)]">
+          <div className="h-10 flex items-center justify-between px-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] shrink-0 gap-4">
+            <span className="text-xs text-[var(--color-muted-foreground)] truncate">
               {settingsUrl.split('?')[0].split('/').pop()}
             </span>
-            <button
-              onClick={() => { clearEmbedCookie(); setSettingsUrl(null); }}
-              className="w-7 h-7 flex items-center justify-center rounded-[var(--radius)] hover:bg-[var(--color-surface-elevated)] text-[var(--color-muted-foreground)] transition-colors"
-              aria-label="Zamknij"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={settingsUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => clearEmbedCookie()}
+                className="flex items-center gap-1.5 text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] transition-colors px-2 py-1 rounded-[var(--radius)] hover:bg-[var(--color-surface-elevated)]"
+                title="Jeśli strona nie ładuje się w ramce, otwórz ją w nowej karcie"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Otwórz w nowej karcie
+              </a>
+              <button
+                onClick={() => { clearEmbedCookie(); setSettingsUrl(null); }}
+                className="w-7 h-7 flex items-center justify-center rounded-[var(--radius)] hover:bg-[var(--color-surface-elevated)] text-[var(--color-muted-foreground)] transition-colors"
+                aria-label="Zamknij"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           <iframe
             src={settingsUrl}

@@ -1,5 +1,7 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { boot } from '@/lib/types';
 import { Shell } from '@/components/layout/Shell';
 import { DashboardPage } from '@/pages/Dashboard';
 import { PagesPage } from '@/pages/Pages';
@@ -23,7 +25,22 @@ const qc = new QueryClient({
   },
 });
 
+// Hidden escape hatch: Shift+Alt+W → go to raw WP admin (plugins.php)
+// Useful when OverCMS panel has a JS error and is unusable.
+function useWpAdminEscape() {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.altKey && e.key === 'W') {
+        window.location.href = boot.adminUrl + 'plugins.php';
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+}
+
 export function App() {
+  useWpAdminEscape();
   return (
     <QueryClientProvider client={qc}>
       <HashRouter>
