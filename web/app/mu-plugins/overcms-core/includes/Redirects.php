@@ -31,10 +31,12 @@ final class Redirects
             return;
         }
 
-        // Nie przekierowuj gdy URL ma parametr `action` — pluginy (np. Google Site Kit)
-        // używają index.php?action=xxx jako endpointu OAuth/callback. Redirect zniszczyłby
-        // ten flow i odsyłał z powrotem do panelu zamiast do Google.
-        if (!empty($_GET['action']) || !empty($_POST['action'])) {
+        // Przekierowuj TYLKO gdy index.php jest bez parametrów (czysty dashboard).
+        // Pluginy (Google Site Kit, OAuth, importy itp.) używają index.php?action=xxx,
+        // index.php?code=xxx, index.php?state=xxx jako endpointów — musimy im nie przeszkadzać.
+        $allowedKeys = ['page'];
+        $extraKeys   = array_diff(array_keys($_GET), $allowedKeys);
+        if (!empty($extraKeys) || !empty($_POST)) {
             return;
         }
 
