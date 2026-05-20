@@ -30,7 +30,7 @@ const qc = new QueryClient({
 function useWpAdminEscape() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.altKey && e.key === 'W') {
+      if (e.shiftKey && e.altKey && e.code === 'KeyW') {
         window.location.href = boot.adminUrl + 'plugins.php';
       }
     };
