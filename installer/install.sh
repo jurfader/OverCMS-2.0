@@ -460,6 +460,14 @@ else
     warn "Pomijam Redis (rozszerzenie php-redis nie jest zainstalowane)"
 fi
 
+# ---------- Finalizacja SEO ----------
+# Przeładuj reguły rewrite PO aktywacji pluginów. Bez tego sitemap Rank Math
+# (/sitemap_index.xml) zwraca 404 — jego reguły dodają się przy aktywacji, ale
+# nie trafiają do WP dopóki nie zrobimy flush po włączeniu wtyczki.
+$WP_CLI rewrite flush --hard --path=web/wp
+# Upewnij się, że witryna jest indeksowalna (blog_public=1).
+$WP_CLI option update blog_public 1 --path=web/wp
+
 # ---------- Install Divi ----------
 if [ -n "$DIVI_ZIP" ]; then
     if [ -f "$DIVI_ZIP" ]; then
