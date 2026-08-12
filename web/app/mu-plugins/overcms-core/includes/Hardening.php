@@ -55,7 +55,7 @@ final class Hardening
             return $methods;
         });
 
-        // Usuń ?ver= z assetów (lepszy cache)
+        // Zamień ?ver=<wersja> na nieujawniający skrót (patrz stripVersion)
         add_filter('style_loader_src', [self::class, 'stripVersion'], 10, 1);
         add_filter('script_loader_src', [self::class, 'stripVersion'], 10, 1);
 
@@ -71,11 +71,63 @@ final class Hardening
         });
     }
 
+    /**
+     * Ukrywa numer wersji w URL-ach assetów, ale ZACHOWUJE możliwość unieważnienia cache.
+     *
+     * Wcześniej ta metoda po prostu kasowała `?ver=`. Zamysł był słuszny (nie zdradzać
+     * wersji WP i wtyczek), ale skutek uboczny był poważny: nginx podaje statyki
+     * z `expires 30d`, więc bez zmiennego fragmentu w URL przeglądarki i Cloudflare
+     * trzymały STARY plik nawet miesiąc po wdrożeniu. Każda poprawka w CSS/JS była
+     * dla odwiedzających niewidoczna.
+     *
+     * Teraz zamiast usuwać wersję podmieniamy ją na 10-znakowy skrót z czasu
+     * modyfikacji pliku: nadal nie zdradza numeru wersji, a zmienia się przy każdym
+     * realnym wdrożeniu. Dla plików spoza tej instalacji (CDN) zostaje samo usunięcie.
+     */
     public static function stripVersion(string $src): string
     {
-        if (str_contains($src, 'ver=')) {
-            $src = remove_query_arg('ver', $src);
+        if (!str_contains($src, 'ver=')) {
+            return $src;
         }
-        return $src;
+
+        $clean = remove_query_arg('ver', $src);
+        $path  = self::localAssetPath($src);
+        if ($path === null) {
+            return $clean;
+        }
+
+        $mtime = @filemtime($path);
+        if (!$mtime) {
+            return $clean;
+        }
+
+        return add_query_arg('v', substr(md5($path . '|' . $mtime), 0, 10), $clean);
+    }
+
+    /** Mapuje URL assetu na ścieżkę w systemie plików. null = plik spoza instalacji. */
+    private static function localAssetPath(string $src): ?string
+    {
+        $srcPath = strtok($src, '?');
+        if ($srcPath === false) {
+            return null;
+        }
+
+        // Kolejność ma znaczenie — site_url() jest najszerszym prefiksem, więc na końcu.
+        $roots = [
+            [content_url(),   WP_CONTENT_DIR],
+            [includes_url(),  ABSPATH . WPINC],
+            [site_url('/'),   ABSPATH],
+        ];
+
+        foreach ($roots as [$url, $dir]) {
+            if (!$url || !str_starts_with($srcPath, $url)) {
+                continue;
+            }
+            $rel  = ltrim(substr($srcPath, strlen($url)), '/');
+            $file = rtrim((string) $dir, '/') . '/' . $rel;
+            return is_file($file) ? $file : null;
+        }
+
+        return null;
     }
 }

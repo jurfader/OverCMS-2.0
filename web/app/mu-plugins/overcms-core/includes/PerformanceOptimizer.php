@@ -20,6 +20,36 @@ final class PerformanceOptimizer
 
         // Wyłącz blokowy CSS Gutenberga na froncie jeśli strona nie używa bloków
         add_action('wp_enqueue_scripts', [self::class, 'maybeDequeueGutenbergCss'], 100);
+
+        // Usuń skrypt detekcji emoji (zbędny inline JS + osobny request na każdej stronie)
+        add_action('init', [self::class, 'disableEmojis']);
+
+        // Nie ładuj wp-embed.min.js na froncie — Divi go nie potrzebuje
+        add_action('wp_enqueue_scripts', [self::class, 'dequeueWpEmbed'], 100);
+    }
+
+    public static function disableEmojis(): void
+    {
+        if (is_admin()) {
+            return;
+        }
+        remove_action('wp_head', 'print_emoji_detection_script', 7);
+        remove_action('wp_print_styles', 'print_emoji_styles');
+        remove_filter('the_content_feed', 'wp_staticize_emoji');
+        remove_filter('comment_text_rss', 'wp_staticize_emoji');
+        remove_filter('wp_mail', 'wp_staticize_emoji_for_email');
+        add_filter('tiny_mce_plugins', static function ($plugins) {
+            return is_array($plugins) ? array_diff($plugins, ['wpemoji']) : [];
+        });
+        add_filter('emoji_svg_url', '__return_false');
+    }
+
+    public static function dequeueWpEmbed(): void
+    {
+        if (is_admin()) {
+            return;
+        }
+        wp_dequeue_script('wp-embed');
     }
 
     public static function addResourceHints(array $hints, string $relation): array
